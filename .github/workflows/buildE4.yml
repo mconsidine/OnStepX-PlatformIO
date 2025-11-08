@@ -13,6 +13,24 @@ jobs:
       uses: actions/checkout@v4
       with:
         submodules: recursive
+        
+    # get local version of ODrive library and install
+    - name: Copy External 'ODriveArduino' Library
+      # Check out the ODrive repo
+      uses: actions/checkout@v4
+      with:
+        repository: odriverobotics/ODrive
+        ref: master # Branch containing the library
+        path: external_odrive_checkout # Temporary folder
+        sparse-checkout: Arduino/ODriveArduino
+
+    - name: Move ODrive Library to Local 'lib' Folder
+      # Move the library files to the local PlatformIO lib directory
+      run: |
+        mkdir -p lib/
+        mv external_odrive_checkout/Arduino/ODriveArduino lib/
+        # Clean up the temporary directory
+        rm -rf external_odrive_checkout
     
     - name: Copy complete E4 source from upstream
       run: |
