@@ -141,8 +141,6 @@ jobs:
         echo "Branch: ${{ github.ref_name }}" >> firmware-info.txt
         echo "" >> firmware-info.txt
         echo "Configuration:" >> firmware-info.txt
-        echo "- Config merge: ${{ github.event.inputs.merge_configs }}" >> firmware-info.txt
-        echo "- Custom config: ${{ github.event.inputs.config_branch }}" >> firmware-info.txt
         echo "" >> firmware-info.txt
         echo "Source Components:" >> firmware-info.txt
         echo "- Complete E4 source (upstream E4 branch)" >> firmware-info.txt
@@ -180,8 +178,6 @@ jobs:
         echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "**Configuration:**" >> $GITHUB_STEP_SUMMARY
-        echo "- Config merge: ${{ github.event.inputs.merge_configs }}" >> $GITHUB_STEP_SUMMARY
-        echo "- Custom config: ${{ github.event.inputs.config_branch }}" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "**Source Strategy:**" >> $GITHUB_STEP_SUMMARY
         echo "- ✅ Complete E4 source (entire src/ directory)" >> $GITHUB_STEP_SUMMARY
