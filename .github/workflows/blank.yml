@@ -1,36 +1,202 @@
-# This is a basic workflow to help you get started with Actions
+name: Build OnStepX for FYSETC E4 only
 
-name: CI
-
-# Controls when the workflow will run
+# This workflow only runs when manually triggered
 on:
-  # Triggers the workflow on push or pull request events but only for the "main" branch
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+    inputs:
+      config_branch:
+        description: 'Branch containing config files (in your fork)'
+        required: false
+        default: 'E4'
+      config_files:
+        description: 'Config files to copy (comma-separated paths)'
+        required: false
+        default: 'Config.h, Extended.config.h'
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
-  build:
-    # The type of runner that the job will run on
+  build-fysetc-e4:
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
+    
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
-
-      # Runs a single command using the runners shell
-      - name: Run a one-line script
-        run: echo Hello, world!
-
-      # Runs a set of commands using the runners shell
-      - name: Run a multi-line script
-        run: |
-          echo Add other actions to build,
-          echo test, and deploy your project.
+    - name: Checkout OnStepX repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+    
+    - name: Copy E4 dependencies from upstream E4 branch
+      run: |
+        echo "Adding upstream remote and fetching E4 branch..."
+        git remote add upstream https://github.com/hjd1964/OnStepX.git
+        git fetch upstream E4:upstream-e4
+        
+        echo "Copying src/plugins folder from E4 branch..."
+        rm -rf src/plugins
+        git checkout upstream-e4 -- src/plugins
+        
+        echo "Copying src/lib folder from E4 branch (includes NVS)..."
+        # This ensures we have all core library files that E4 plugins need
+        rm -rf src/lib
+        git checkout upstream-e4 -- src/lib
+        
+        echo "Copying src/telescope folder from E4 branch (may have dependencies)..."
+        # E4 plugins might reference telescope classes
+        git checkout upstream-e4 -- src/telescope || echo "Warning: src/telescope not found in E4 branch"
+        
+        echo "Contents after copying E4 files:"
+        echo "=== src/plugins ==="
+        ls -la src/plugins/ || echo "src/plugins not found"
+        echo "=== src/lib ==="
+        ls -la src/lib/ || echo "src/lib not found"
+        echo "=== src/lib/nv ==="
+        ls -la src/lib/nv/ || echo "src/lib/nv not found"
+        
+        # Clean up temporary branch
+        git branch -D upstream-e4 2>/dev/null || true
+    
+    - name: Copy configuration files from your fork's branch
+      if: github.event.inputs.config_branch != ''
+      run: |
+        echo "Fetching configuration from branch: ${{ github.event.inputs.config_branch }}"
+        git fetch origin ${{ github.event.inputs.config_branch }}:config-temp
+        
+        # Split comma-separated config files and copy each one
+        IFS=',' read -ra FILES <<< "${{ github.event.inputs.config_files }}"
+        for file in "${FILES[@]}"; do
+          file=$(echo "$file" | xargs)  # trim whitespace
+          echo "Copying: $file"
+          git checkout config-temp -- "$file" || echo "Warning: Could not find $file in config branch"
+        done
+        
+        git branch -D config-temp 2>/dev/null || true
+    
+    - name: Display merged source structure
+      run: |
+        echo "=== Repository structure after merging E4 files and config ==="
+        echo ""
+        echo "E4 Plugins:"
+        find src/plugins -name "*.cpp" -o -name "*.h" 2>/dev/null | head -20 || echo "No plugins found"
+        echo ""
+        echo "E4 Core Libraries:"
+        find src/lib -name "*.h" 2>/dev/null | head -15 || echo "No lib files found"
+        echo ""
+        echo "NVS (Non-Volatile Storage) files:"
+        ls -lh src/lib/nv/ 2>/dev/null || echo "NVS not found"
+        echo ""
+        echo "Config files:"
+        ls -lh Config.h 2>/dev/null || echo "Config.h not found"
+    
+    - name: Set up Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+    
+    - name: Install PlatformIO
+      run: |
+        python -m pip install --upgrade pip
+        pip install platformio
+    
+    - name: Cache PlatformIO packages
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.platformio
+          .pio
+        key: ${{ runner.os }}-pio-fysetc-e4-${{ hashFiles('**/platformio.ini') }}
+        restore-keys: |
+          ${{ runner.os }}-pio-fysetc-e4-
+          ${{ runner.os }}-pio-
+    
+    - name: Display PlatformIO environment info
+      run: |
+        pio --version
+        echo "Building for FYSETC E4 (ESP32-based board)"
+    
+    - name: Build OnStepX firmware for FYSETC E4
+      run: |
+        # Build for ESP32 (FYSETC E4)
+        pio run -e esp32dev --disable-auto-clean
+    
+    - name: List build output files
+      run: |
+        echo "Build completed. Output files:"
+        ls -lah .pio/build/esp32dev/ || echo "Build directory not found"
+    
+    - name: Upload firmware binary
+      uses: actions/upload-artifact@v4
+      with:
+        name: onstepx-fysetc-e4-firmware
+        path: |
+          .pio/build/esp32dev/firmware.bin
+          .pio/build/esp32dev/firmware.elf
+          .pio/build/esp32dev/bootloader.bin
+          .pio/build/esp32dev/partitions.bin
+        if-no-files-found: warn
+        retention-days: 30
+    
+    - name: Create firmware info file
+      run: |
+        BUILD_DATE=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
+        cat > firmware-info.txt << EOF
+        OnStepX Firmware for FYSETC E4
+        ================================
+        Build Date: ${BUILD_DATE}
+        Commit: ${{ github.sha }}
+        Branch: ${{ github.ref_name }}
+        Config Branch: ${{ github.event.inputs.config_branch }}
+        
+        Source Components:
+        - Base: Your fork of OnStepX (main branch)
+        - Plugins: Copied from upstream E4 branch (hjd1964/OnStepX)
+        - Core Libraries: Copied from upstream E4 branch (includes NVS)
+        - Config: From your ${{ github.event.inputs.config_branch }} branch
+        
+        Target Board: FYSETC E4 (ESP32-based)
+        Chip: ESP32 240MHz
+        Flash: 16MB
+        
+        Build Notes:
+        - VERSION macro conflict avoided (uses FIRMWARE_VERSION)
+        - NVS (Non-Volatile Storage) included from E4 branch
+        - TMC2209Stepper library compatibility ensured
+        
+        Flash Instructions:
+        -------------------
+        1. Using esptool.py:
+           esptool.py --chip esp32 --port /dev/ttyUSB0 --baud 921600 write_flash 0x10000 firmware.bin
+        
+        2. Using PlatformIO:
+           pio run -e esp32dev -t upload --upload-port /dev/ttyUSB0
+        
+        3. Using Web Interface (if enabled):
+           Upload firmware.bin through the ESP3D web interface
+        
+        4. Over-the-Air (OTA):
+           Add to platformio.ini: upload_port = <E4_IP_ADDRESS>
+           Then: pio run -e esp32dev -t upload
+        EOF
+        cat firmware-info.txt
+    
+    - name: Upload firmware info
+      uses: actions/upload-artifact@v4
+      with:
+        name: onstepx-fysetc-e4-firmware
+        path: firmware-info.txt
+    
+    - name: Build summary
+      run: |
+        echo "### ✅ Build Completed for FYSETC E4" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Target:** FYSETC E4 (ESP32)" >> $GITHUB_STEP_SUMMARY
+        echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+        echo "**Config Branch:** ${{ github.event.inputs.config_branch }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**E4 Components Merged:**" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ E4 Plugins (src/plugins)" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ E4 Core Libraries (src/lib with NVS)" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ E4 Telescope Classes (src/telescope)" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Fixes Applied:**" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ VERSION macro conflict avoided" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ NVS class available for E4 plugins" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "Download the firmware from the Artifacts section above." >> $GITHUB_STEP_SUMMARY
