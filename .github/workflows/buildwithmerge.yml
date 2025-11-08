@@ -202,6 +202,9 @@ jobs:
     
     - name: Build OnStepX firmware for FYSETC E4
       run: |
+        echo "Current folder structure"
+        ls -la
+        echo "End of current folder structure"
         echo "Building OnStepX for FYSETC E4..."
         pio run -e esp32dev --disable-auto-clean
     
