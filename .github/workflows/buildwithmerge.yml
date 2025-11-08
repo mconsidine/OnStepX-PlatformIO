@@ -51,24 +51,24 @@ jobs:
         echo ""
         echo "=== E4 Source Structure ==="
         ls -la src/ 2>/dev/null || echo "src/ not found"
-        mkdir tmpsrc
-        cp -a src/. tmpsrc
-        ls -la tmpsrc/
-        mkdir src/src
-        cp -a tmpsrc/. src/src
+        #mkdir tmpsrc
+        #cp -a src/. tmpsrc
+        #ls -la tmpsrc/
+        #mkdir src/src
+        #cp -a tmpsrc/. src/src
         echo ""
         echo "Root source files:"
         ls -la *.ino *.cpp *.h 2>/dev/null || echo "No root source files"
-        cp *.ino src/
-        cp *.h src/
+        #cp *.ino src/
+        #cp *.h src/
         #cd src
         #mkdir -p src
         #cd src
         #mkdir -p lib
         #cp ../*.h .
         #cp -a ../lib/. lib
-        ls -la src
-        ls -la src/src
+        #ls -la src
+        #ls -la src/src
     
     - name: Merge Config.h files (E4 + main)
       if: github.event.inputs.merge_configs == 'yes'
@@ -158,7 +158,7 @@ jobs:
             echo "No custom Config.h found, using merged version"
         fi
         
-        git checkout config-temp -- Extended.config.h
+        #git checkout config-temp -- Extended.config.h
         
         git branch -D config-temp 2>/dev/null || true
     
