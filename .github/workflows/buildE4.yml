@@ -204,11 +204,11 @@ jobs:
         echo "Merged binary created as FYSETC_E4_firmware.bin"
         echo "On linux try: esptool.py --port /dev/ttyS0 --baud 460800 write_flash 0x0 FYSETC_E4_firmware.bin"
         
-      - name: 📦 Upload Merged Binary Artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: FYSETC_E4_firmware
-          path: FYSETC_E4_firmware.bin
+    - name: 📦 Upload Merged Binary Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: FYSETC_E4_firmware
+        path: FYSETC_E4_firmware.bin
           
     - name: Build summary
       run: |
