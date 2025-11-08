@@ -133,7 +133,7 @@ jobs:
     - name: Upload boot_app0.bin
       uses: actions/upload-artifact@v4
       with:
-        name: bootloader_files_1
+        name: boot_app0
         path: ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin
 
     - name: Create firmware info file
