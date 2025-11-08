@@ -149,7 +149,6 @@ jobs:
         echo "  * src/lib (NVS, core libraries)" >> firmware-info.txt
         echo "  * src/telescope (mount control)" >> firmware-info.txt
         echo "  * src/plugins (WiFi, web interface)" >> firmware-info.txt
-        echo "- Config: Merged E4 + main (E4 precedence)" >> firmware-info.txt
         echo "" >> firmware-info.txt
         echo "Target Board: E4 (ESP32)" >> firmware-info.txt
         echo "- Chip: ESP32 @ 240MHz" >> firmware-info.txt
@@ -183,6 +182,5 @@ jobs:
         echo "- ✅ Complete E4 source (entire src/ directory)" >> $GITHUB_STEP_SUMMARY
         echo "- ✅ Main file with global NVS instance" >> $GITHUB_STEP_SUMMARY
         echo "- ✅ All E4 dependencies included" >> $GITHUB_STEP_SUMMARY
-        echo "- ✅ Config.h merged (E4 + main additions)" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "Download firmware and Config.h from Artifacts section." >> $GITHUB_STEP_SUMMARY
