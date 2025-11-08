@@ -1,20 +1,11 @@
-name: Build OnStepX for FYSETC E4 (Complete)
+name: Build OnStepX for E4
 
 # This workflow only runs when manually triggered
 on:
   workflow_dispatch:
-    inputs:
-      config_branch:
-        description: 'Branch containing custom config files (optional)'
-        required: false
-        default: ''
-      merge_configs:
-        description: 'Merge E4 and main Config.h? (yes/no)'
-        required: false
-        default: 'yes'
 
 jobs:
-  build-fysetc-e4:
+  build-e4-branch:
     runs-on: ubuntu-latest
     
     steps:
@@ -28,7 +19,7 @@ jobs:
         echo "Adding upstream remote and fetching branches..."
         git remote add upstream https://github.com/hjd1964/OnStepX.git
         git fetch upstream E4:upstream-e4
-        git fetch upstream main:upstream-main
+        #git fetch upstream main:upstream-main
         
         echo "Copying complete src/ directory from E4 branch..."
         echo "This ensures we get all dependencies including global NVS instance"
@@ -54,96 +45,6 @@ jobs:
         echo ""
         echo "Root source files:"
         ls -la *.ino *.cpp *.h 2>/dev/null || echo "No root source files"
-    
-    - name: Merge Config.h files (E4 + main)
-      if: github.event.inputs.merge_configs == 'yes'
-      run: |
-        echo "=== Merging Config.h from E4 and main ==="
-        echo "Strategy: E4 takes precedence, main supplements"
-        echo ""
-        
-        # Extract both Config.h files
-        git show upstream-e4:Config.h > Config-e4.h
-        git show upstream-main:Config.h > Config-main.h
-        
-        # Count defines
-        E4_COUNT=$(grep -c "^#define" Config-e4.h || echo "0")
-        MAIN_COUNT=$(grep -c "^#define" Config-main.h || echo "0")
-        echo "E4 Config.h defines:   $E4_COUNT"
-        echo "Main Config.h defines: $MAIN_COUNT"
-        
-        # Start with E4 (takes precedence)
-        cp Config-e4.h Config.h
-        
-        # Extract define names
-        grep "^#define" Config-e4.h | awk '{print $2}' | sort > e4-defines.txt
-        grep "^#define" Config-main.h | awk '{print $2}' | sort > main-defines.txt
-        
-        # Find defines only in main
-        comm -23 main-defines.txt e4-defines.txt > main-only.txt
-        
-        MAIN_ONLY=$(wc -l < main-only.txt)
-        
-        if [ "$MAIN_ONLY" -gt 0 ]; then
-            echo ""
-            echo "Found $MAIN_ONLY defines only in main (adding to Config.h):"
-            cat main-only.txt | head -20
-            [ "$MAIN_ONLY" -gt 20 ] && echo "... and $((MAIN_ONLY - 20)) more"
-            
-            # Add section header
-            echo "" >> Config.h
-            echo "" >> Config.h
-            echo "// =============================================================================" >> Config.h
-            echo "// ADDITIONS FROM MAIN BRANCH" >> Config.h
-            echo "// The following settings were found in main but not in E4" >> Config.h
-            echo "// Review and adjust as needed for your hardware" >> Config.h
-            echo "// =============================================================================" >> Config.h
-            echo "" >> Config.h
-            
-            # Add each main-only define with context
-            while IFS= read -r define; do
-                echo "// From main branch: $define" >> Config.h
-                # Extract full definition including multi-line defines
-                awk -v def="$define" '
-                    $0 ~ "^#define " def {
-                        print
-                        while (sub(/\\$/, "")) {
-                            getline
-                            print
-                        }
-                        print ""
-                    }
-                ' Config-main.h >> Config.h
-            done < main-only.txt
-            
-            echo ""
-            echo "✓ Merged Config.h created"
-            echo "  Base (E4):    $E4_COUNT defines"
-            echo "  Added (main): $MAIN_ONLY defines"
-            echo "  Total:        $(grep -c "^#define" Config.h) defines"
-        else
-            echo ""
-            echo "✓ No unique defines in main (using E4 Config.h as-is)"
-        fi
-        
-        # Cleanup
-        rm -f Config-e4.h Config-main.h e4-defines.txt main-defines.txt main-only.txt
-    
-    - name: Apply custom configuration
-      if: github.event.inputs.config_branch != ''
-      run: |
-        echo "Applying custom config from branch: ${{ github.event.inputs.config_branch }}"
-        git fetch origin ${{ github.event.inputs.config_branch }}:config-temp
-        
-        # Copy custom Config.h if it exists (overrides merged version)
-        if git show config-temp:Config.h >/dev/null 2>&1; then
-            echo "Using custom Config.h from ${{ github.event.inputs.config_branch }}"
-            git checkout config-temp -- Config.h
-        else
-            echo "No custom Config.h found, using merged version"
-        fi
-        
-        git branch -D config-temp 2>/dev/null || true
     
     - name: Display final configuration
       run: |
@@ -178,19 +79,19 @@ jobs:
         path: |
           ~/.platformio
           .pio
-        key: ${{ runner.os }}-pio-fysetc-e4-${{ hashFiles('**/platformio.ini') }}
+        key: ${{ runner.os }}-pio-e4-${{ hashFiles('**/platformio.ini') }}
         restore-keys: |
-          ${{ runner.os }}-pio-fysetc-e4-
+          ${{ runner.os }}-pio-e4-
           ${{ runner.os }}-pio-
     
-    - name: Build OnStepX firmware for FYSETC E4
+    - name: Build OnStepX firmware for E4
       run: |
         echo "Current folder structure"
         ls -la
         cat Config.h
         cat Extended.config.h
         echo "End of current folder structure"
-        echo "Building OnStepX for FYSETC E4..."
+        echo "Building OnStepX for E4..."
         pio run -e esp32dev --disable-auto-clean
     
     - name: List build output files
@@ -201,7 +102,7 @@ jobs:
     - name: Upload firmware binary
       uses: actions/upload-artifact@v4
       with:
-        name: onstepx-fysetc-e4-firmware
+        name: onstepx-e4-firmware
         path: |
           .pio/build/esp32dev/firmware.bin
           .pio/build/esp32dev/firmware.elf
@@ -215,7 +116,7 @@ jobs:
       run: |
         BUILD_DATE=$(date -u +"%Y-%m-%d %H:%M:%S UTC")
         cat > firmware-info.txt << 'ENDOFFILE'
-        OnStepX Firmware for FYSETC E4
+        OnStepX Firmware for E4
         ================================
         ENDOFFILE
         echo "Build Date: ${BUILD_DATE}" >> firmware-info.txt
@@ -235,7 +136,7 @@ jobs:
         echo "  * src/plugins (WiFi, web interface)" >> firmware-info.txt
         echo "- Config: Merged E4 + main (E4 precedence)" >> firmware-info.txt
         echo "" >> firmware-info.txt
-        echo "Target Board: FYSETC E4 (ESP32)" >> firmware-info.txt
+        echo "Target Board: E4 (ESP32)" >> firmware-info.txt
         echo "- Chip: ESP32 @ 240MHz" >> firmware-info.txt
         echo "- Flash: 16MB" >> firmware-info.txt
         echo "- Drivers: 4x TMC2209 (UART)" >> firmware-info.txt
@@ -251,14 +152,14 @@ jobs:
     - name: Upload firmware info
       uses: actions/upload-artifact@v4
       with:
-        name: onstepx-fysetc-e4-firmware-info
+        name: onstepx-e4-firmware-info
         path: firmware-info.txt
     
     - name: Build summary
       run: |
-        echo "### ✅ Build Completed for FYSETC E4" >> $GITHUB_STEP_SUMMARY
+        echo "### ✅ Build Completed for E4" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Target:** FYSETC E4 (ESP32)" >> $GITHUB_STEP_SUMMARY
+        echo "**Target:** E4 (ESP32)" >> $GITHUB_STEP_SUMMARY
         echo "**Commit:** \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
         echo "" >> $GITHUB_STEP_SUMMARY
         echo "**Configuration:**" >> $GITHUB_STEP_SUMMARY
