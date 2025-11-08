@@ -108,6 +108,8 @@ jobs:
         cat Config.h
         cat Extended.config.h
         echo "End of current folder structure"
+        ls ~/.platformio/packages/framework-arduinoespressif32/tools/partitions
+        ls ~/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/bin        
         echo "Building OnStepX for E4..."
         pio run -e esp32dev --disable-auto-clean
     
@@ -128,6 +130,18 @@ jobs:
           Config.h
         if-no-files-found: warn
         retention-days: 30
+        
+    - name: Upload boot_app0.bin
+      uses: actions/upload-artifact@v4
+      with:
+        name: bootloader_files_1
+        path: ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin
+        
+    - name: Upload boot_app0.bin
+      uses: actions/upload-artifact@v4
+      with:
+        name: bootloader_files_2
+        path: ~/.platformio/packages/framework-arduinoespressif32/tools/sdk/esp32/bin/boot_app0.bin
     
     - name: Create firmware info file
       run: |
