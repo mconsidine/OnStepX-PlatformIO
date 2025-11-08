@@ -116,7 +116,7 @@ jobs:
       run: |
         echo "Build completed. Output files:"
         cp ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin .pio/build/esp32dev/
-        ls -lah .pio/build/esp32dev/ || echo "Build directory not found"
+        ls -la .pio/build/esp32dev/ || echo "Build directory not found"
     
     - name: Upload firmware binary
       uses: actions/upload-artifact@v4
