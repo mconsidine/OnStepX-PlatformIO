@@ -194,7 +194,7 @@ jobs:
 
         # 4. Execute the esptool.py merge_bin command
         #    PlatformIO installs esptool.py, making it available globally.
-        esptool.py --chip ${CHIP} merge_bin \
+        pio pkg exec --package "platformio/tool-esptoolpy@~1.40501.0" -- esptool.py --chip ${CHIP} merge_bin \
           0x1000 "${BOOTLOADER_BIN}" \
           0x8000 "${PARTITIONS_BIN}" \
           0xe000 "${BOOT_APP0_BIN}" \
