@@ -57,9 +57,9 @@ jobs:
         # - src/telescope (mount control)
         # - src/plugins (E4 web interface, WiFi)
         # - Main .ino or .cpp files with global declarations
-        rm -rf src
+        rm -rf src/plugins
         
-        git checkout upstream-e4 -- src
+        git checkout upstream-e4 -- src/plugins
         
         # Also copy any root-level source files
         git checkout upstream-e4 -- '*.ino' '*.cpp' '*.h' 2>/dev/null || echo "No root-level source files found"
@@ -68,7 +68,7 @@ jobs:
         
         echo ""
         echo "=== E4 Source Structure ==="
-        ls -la src/ 2>/dev/null || echo "src/ not found"
+        ls -la src/plugins 2>/dev/null || echo "src/plugins not found"
         echo ""
         echo "Root source files:"
         ls -la *.ino *.cpp *.h 2>/dev/null || echo "No root source files"
