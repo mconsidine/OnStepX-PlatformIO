@@ -1,1 +1,1 @@
-attempt at compiling onstepx with platformio
+attempt at compiling onstepx for fysetc e4 with platformio
