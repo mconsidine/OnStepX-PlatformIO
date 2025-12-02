@@ -71,6 +71,7 @@ jobs:
         echo ""
         echo "Key E4 defines:"
         grep "^#define FYSETC_E4" Config.h || echo "  ⚠️  FYSETC_E4: not defined"
+        grep "^#define PINMAP" Config.h || eco "     PINMAP: not defined'
         grep "^#define ESP32" Config.h || echo "  ⚠️  ESP32: not defined"
         grep "^#define WIFI_ENABLED" Config.h || echo "  ⚠️  WIFI_ENABLED: not defined"
         grep "^#define NV_DRIVER" Config.h || echo "  ⚠️  NV_DRIVER: not defined"
