@@ -70,11 +70,11 @@ jobs:
         echo "Config.h defines: $(grep -c "^#define" Config.h)"
         echo ""
         echo "Key E4 defines:"
-        grep "^#define FYSETC_E4" Config.h || echo "  ⚠️  FYSETC_E4: not defined"
-        grep "^#define PINMAP" Config.h || eco "     PINMAP: not defined"
-        grep "^#define ESP32" Config.h || echo "  ⚠️  ESP32: not defined"
-        grep "^#define WIFI_ENABLED" Config.h || echo "  ⚠️  WIFI_ENABLED: not defined"
-        grep "^#define NV_DRIVER" Config.h || echo "  ⚠️  NV_DRIVER: not defined"
+        #grep "^#define FYSETC_E4" Config.h || echo "  ⚠️  FYSETC_E4: not defined"
+        grep "^#define PINMAP" Config.h || echo "     PINMAP: not defined"
+        #grep "^#define ESP32" Config.h || echo "  ⚠️  ESP32: not defined"
+        #grep "^#define WIFI_ENABLED" Config.h || echo "  ⚠️  WIFI_ENABLED: not defined"
+        #grep "^#define NV_DRIVER" Config.h || echo "  ⚠️  NV_DRIVER: not defined"
         echo ""
         echo "Source files:"
         echo "  Main file: $(ls *.ino 2>/dev/null || echo 'Not found')"
@@ -162,13 +162,13 @@ jobs:
         echo "" >> firmware-info.txt
         echo "Target Board: E4 (ESP32)" >> firmware-info.txt
         echo "- Chip: ESP32 @ 240MHz" >> firmware-info.txt
-        echo "- Flash: 16MB" >> firmware-info.txt
+        #echo "- Flash: 16MB" >> firmware-info.txt
         echo "- Drivers: 4x TMC2209 (UART)" >> firmware-info.txt
         echo "" >> firmware-info.txt
-        echo "Flash Instructions:" >> firmware-info.txt
-        echo "-------------------" >> firmware-info.txt
-        echo "esptool.py --chip esp32 --port /dev/ttyUSB0 \\" >> firmware-info.txt
-        echo "  --baud 921600 write_flash 0x10000 firmware.bin" >> firmware-info.txt
+        #echo "Flash Instructions:" >> firmware-info.txt
+        #echo "-------------------" >> firmware-info.txt
+        #echo "esptool.py --chip esp32 --port /dev/ttyUSB0 \\" >> firmware-info.txt
+        #echo "  --baud 921600 write_flash 0x10000 firmware.bin" >> firmware-info.txt
         echo "" >> firmware-info.txt
         echo "The Config.h file used for this build is included in the artifacts." >> firmware-info.txt
         cat firmware-info.txt
@@ -181,6 +181,17 @@ jobs:
         
     - name: Merge Final Binary
       run: |
+        #per Chad Gray post on onstep dev subgroup
+        #  https://onstep.groups.io/g/developer/message/4584
+        #esptool --chip esp32 merge_bin \
+        #        -o merged-firmware.bin \
+        #        --flash_mode dio \
+        #        --flash_freq 40m \
+        #        --flash_size 4MB \
+        #        0x1000 bootloader.bin \
+        #        0x8000 partitions.bin \
+        #        0xe000 boot.bin \
+        #        0x10000 your_app.bin
         # 1. Define variables for clarity
         CHIP="esp32"
           
@@ -198,6 +209,9 @@ jobs:
         # 4. Execute the esptool.py merge_bin command
         #    PlatformIO installs esptool.py, making it available globally.
         pio pkg exec --package "platformio/tool-esptoolpy@~1.40501.0" -- esptool.py --chip ${CHIP} merge_bin \
+          --flash_mode dio \
+          --flash_freq 40m \
+          --flash_size 4MB \
           0x1000 "${BOOTLOADER_BIN}" \
           0x8000 "${PARTITIONS_BIN}" \
           0xe000 "${BOOT_APP0_BIN}" \
