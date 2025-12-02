@@ -60,6 +60,12 @@ jobs:
         echo "=== E4 Source Structure ==="
         ls -la src/ 2>/dev/null || echo "src/ not found"
         echo ""
+        ls -la src/plugins/ 2>/dev/null || echo "src/plugins/ not found"
+        echo ""
+        ls -la src/plugins/website/ 2>/dev/null || echo "src/plugins/website/ not found"
+        echo ""
+        ls -la src/telescope/ 2>/dev/null || echo "src/telescope not found"
+        echo ""
         echo "Root source files:"
         ls -la *.ino *.cpp *.h 2>/dev/null || echo "No root source files"
     
