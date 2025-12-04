@@ -264,7 +264,6 @@ jobs:
         echo "" >> firmware-info.txt
         echo "Target Board: FYSETC E4 (ESP32)" >> firmware-info.txt
         echo "- Chip: ESP32 @ 240MHz" >> firmware-info.txt
-        ;echo "- Flash: 16MB" >> firmware-info.txt
         echo "- Drivers: 4x TMC2209 (UART)" >> firmware-info.txt
         echo "" >> firmware-info.txt
         echo "Flash Instructions:" >> firmware-info.txt
