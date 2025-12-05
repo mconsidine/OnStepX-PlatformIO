@@ -144,8 +144,6 @@ jobs:
             echo "" >> Config.h
             echo "// =============================================================================" >> Config.h
             echo "// ADDITIONS FROM MAIN BRANCH" >> Config.h
-            echo "// The following settings were found in main but not in E4" >> Config.h
-            echo "// Review and adjust as needed for your hardware" >> Config.h
             echo "// =============================================================================" >> Config.h
             echo "" >> Config.h
             
