@@ -12,6 +12,298 @@ on:
         description: 'Merge E4 and main Config.h? (yes/no)'
         required: false
         default: 'yes'
+      onstep_version:
+        description: OnStepX firmware version
+        type: choice
+        default: '4x'
+        options:
+        - '4x'
+        - '3x'
+      mount_type:
+        description: Mount type
+        type: choice
+        default: 'e'
+        options:
+        - 'e'
+        - 'a'
+        - 'f'
+      board:
+        description: Controller board type
+        type: choice
+        default: 'MiniPCB'
+        options:
+        - 'MiniPCB'
+        - 'MiniPCB2'
+        - 'MaxPCB'
+        - 'MaxPCB2'
+        - 'MaxSTM3'
+        - 'FYSETC_S6'
+        - 'FYSETC_S6_2'
+        - 'STM32Blue'
+        - 'CNC3'
+        - 'MksGenL1'
+        - 'MksGenL2'
+        - 'MaxESP2'
+        - 'MaxESP3'
+        - 'Ramps14'
+      slew_rate_desired:
+        description: Slew rate (deg/sec) (enter a value between 1.0 and 4.0)
+        type: string
+        default: '2.0'
+      a1_wormwheel_steps_per_rotation:
+        description: Axis 1 wormwheel steps/rotation
+        type: number
+        default: 144
+        min: 144
+        max: 360
+      a2_wormwheel_steps_per_rotation:
+        description: Axis 2 wormwheel steps/rotation
+        type: number
+        default: 144
+        min: 144
+        max: 360
+      a1_transfer_gear_ratio:
+        description: Axis 1 transfer gear ratio (enter a value between 0.1 and 5.0)
+        type: string
+        default: '1.0'
+      a2_transfer_gear_ratio:
+        description: Axis 2 transfer gear ratio (enter a value between 0.1 and 5.0)
+        type: string
+        default: '1.0'
+      a1_motor_steps_per_rotation:
+        description: Axis 1 motor steps
+        type: choice
+        default: '200'
+        options:
+        - '200'
+        - '400'
+        - '100'
+        - '96'
+        - '48'
+        - '24'
+      a2_motor_steps_per_rotation:
+        description: Axis 2 motor steps
+        type: choice
+        default: '200'
+        options:
+        - '200'
+        - '400'
+        - '100'
+        - '96'
+        - '48'
+        - '24'
+      a1_microsteps_tracking:
+        description: Axis 1 tracking microsteps
+        type: choice
+        default: '16'
+        options:
+        - '1'
+        - '2'
+        - '4'
+        - '8'
+        - '16'
+        - '32'
+        - '64'
+        - '128'
+        - '256'
+      a2_microsteps_tracking:
+        description: Axis 2 tracking microsteps
+        type: choice
+        default: '16'
+        options:
+        - '1'
+        - '2'
+        - '4'
+        - '8'
+        - '16'
+        - '32'
+        - '64'
+        - '128'
+        - '256'
+      a1_microsteps_goto:
+        description: Axis 1 GoTo microsteps
+        type: choice
+        default: 'OFF'
+        options:
+        - 'OFF'
+        - '1'
+        - '2'
+        - '4'
+        - '8'
+        - '16'
+        - '32'
+        - '64'
+        - '128'
+        - '256'
+      a2_microsteps_goto:
+        description: Axis 2 GoTo microsteps
+        type: choice
+        default: 'OFF'
+        options:
+        - 'OFF'
+        - '1'
+        - '2'
+        - '4'
+        - '8'
+        - '16'
+        - '32'
+        - '64'
+        - '128'
+        - '256'
+      a1_driver_model:
+        description: Axis 1 driver model
+        type: choice
+        default: TMC2209
+        options:
+        - LV8729
+        - TMC5160
+        - TMC5160_QUIET
+        - TMC2130
+        - TMC2130_QUIET
+        - TMC2209
+        - S109
+        - GENERIC
+        - TMC2100
+        - A4988
+        - DRV8825
+        - TMC2208
+      a2_driver_model:
+        description: Axis 2 driver model
+        type: choice
+        default: TMC2209
+        options:
+        - LV8729
+        - TMC5160
+        - TMC5160_QUIET
+        - TMC2130
+        - TMC2130_QUIET
+        - TMC2209
+        - S109
+        - GENERIC
+        - TMC2100
+        - A4988
+        - DRV8825
+        - TMC2208
+      a1_irun:
+        description: Axis 1 tracking current
+        type: choice
+        default: '700'
+        options:
+        - 'OFF'
+        - '400'
+        - '600'
+        - '700'
+        - '800'
+        - '900'
+        - '1000'
+        - '1200'
+      a2_irun:
+        description: Axis 2 tracking current
+        type: choice
+        default: '700'
+        options:
+        - 'OFF'
+        - '400'
+        - '600'
+        - '700'
+        - '800'
+        - '900'
+        - '1000'
+        - '1200'
+      a1_igoto:
+        description: Axis 1 GoTo current
+        type: choice
+        default: '900'
+        options:
+        - 'OFF'
+        - '400'
+        - '600'
+        - '700'
+        - '800'
+        - '900'
+        - '1000'
+        - '1200'
+      a2_igoto:
+        description: Axis 2 GoTo current
+        type: choice
+        default: '900'
+        options:
+        - 'OFF'
+        - '400'
+        - '600'
+        - '700'
+        - '800'
+        - '900'
+        -  '1000'
+        - '1200'
+      a1_reverse:
+        description: Axis 1 reverse
+        type: choice
+        default: 'OFF'
+        options:
+        - 'OFF'
+        - 'ON'
+      a2_reverse:
+        description: Axis 2 reverse
+        type: choice
+        default: 'OFF'
+        options:
+        - 'OFF'
+        - 'ON'
+      wave_form:
+        description: Stepper waveform
+        type: choice
+        default: 'SQUARE'
+        options:
+        - 'SQUARE'
+        - 'PULSE'
+      time_location_source:
+        description: Time/Location Source
+        type: choice
+        default: 'OFF'
+        options:
+        - 'OFF'
+        - 'DS3231'
+        - 'DS3234'
+        - 'GPS'
+      buzzer:
+        description: Buzzer mode
+        type: choice
+        default: 'OFF'
+        options:
+        - 'OFF'
+        - 'ON'
+        - '1000'
+        - '2000'
+      autostart_tracking:
+        description: Auto-start tracking
+        type: choice
+        default: 'OFF'
+        options:
+        - 'OFF'
+        - 'ON'
+      st4_interface:
+        description: ST4 interface
+        type: choice
+        default: 'OFF'
+        options:
+        - 'OFF'
+        - 'ON'
+        - 'ON_PULLUP'
+      st4_hc:
+        description: ST4 hand controller
+        type: choice
+        default: 'OFF'
+        options:
+        - 'OFF'
+        - 'ON'
+      pec_sensor:
+        description: PEC sensor
+        type: choice
+        default: 'OFF'
+        options:
+        - 'OFF'
+        - 'ON'
 
 jobs:
   build-fysetc-e4:
@@ -180,6 +472,7 @@ jobs:
         grep "^#define AXIS1_DRIVER_REVERSE" Config.h || echo "     AXIS1_DRIVER_REVERSE : not defined"
         grep "^#define AXIS2_DRIVER_REVERSE" Config.h || echo "     AXIS2_DRIVER_REVERSE : not defined"
         grep "^#define MOUNT_TYPE" Config.h || echo "     MOUNT_TYPE : not defined"
+        echo "Mount type : ${{ github.event.inputs.mount_type }}"
         grep "^#define PEC_STEPS_PER_WORM_ROTATION" Config.h || echo "     PEC_STEPS_PER_WORM_ROTATION : not defined"
         echo ""
         echo "Source files:"
