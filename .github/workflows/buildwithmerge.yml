@@ -218,7 +218,7 @@ jobs:
             ${{ github.event.inputs.micro_steps }} *
             ${{ github.event.inputs.gear_reduction_ratio }} *
             ${{ github.event.inputs.final_reduction }} / 360
-        )
+        ))
         echo $temp_var
         sed -i "s/^#define[[:space:]]\+AXIS1_STEPS_PER_DEGREE[[:space:]]\+.*$/#define AXIS1_STEPS_PER_DEGREE $temp_var/" Config.h
 
