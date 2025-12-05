@@ -12,7 +12,38 @@ on:
         description: 'Merge E4 and main Config.h? (yes/no)'
         required: false
         default: 'yes'
-
+      stepper_steps:
+        description: 'Stepper motor steps'
+        required: true
+        default: 400
+        options:
+        - 200
+        - 400
+      micro_steps:
+        description: 'Microsteps'
+        required: true
+        default: 32
+        options:
+        - 16
+        - 32
+        - 64
+      gear_reduction_ratio:
+        description: 'Reduction from motor to worm'
+        required: true
+        default: 3
+        options:
+        - 2
+        - 3
+        - 4
+        - 5
+      final_reduction:
+        description: 'Teeth in worm gear'
+        required: true
+        default: 144
+        options:
+        - 144
+        - 360
+        
 jobs:
   build-fysetc-e4:
     runs-on: ubuntu-latest
@@ -180,7 +211,7 @@ jobs:
         grep "^#define AXIS1_DRIVER_REVERSE" Config.h || echo "     AXIS1_DRIVER_REVERSE : not defined"
         grep "^#define AXIS2_DRIVER_REVERSE" Config.h || echo "     AXIS2_DRIVER_REVERSE : not defined"
         grep "^#define MOUNT_TYPE" Config.h || echo "     MOUNT_TYPE : not defined"
-        echo "Mount type : ${{ github.event.inputs.mount_type }}"
+        echo ${{ github.event.inputs.stepper_steps }} * ${{ github.event.inputs.micro_steps }}
         grep "^#define PEC_STEPS_PER_WORM_ROTATION" Config.h || echo "     PEC_STEPS_PER_WORM_ROTATION : not defined"
         echo ""
         echo "Source files:"
