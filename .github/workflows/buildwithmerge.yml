@@ -211,7 +211,8 @@ jobs:
         grep "^#define AXIS1_DRIVER_REVERSE" Config.h || echo "     AXIS1_DRIVER_REVERSE : not defined"
         grep "^#define AXIS2_DRIVER_REVERSE" Config.h || echo "     AXIS2_DRIVER_REVERSE : not defined"
         grep "^#define MOUNT_TYPE" Config.h || echo "     MOUNT_TYPE : not defined"
-        echo ${ github.event.inputs.stepper_steps * github.event.inputs.micro_steps * gear_reduction_ratio * final_reduction }
+        temp_var = ${ github.event.inputs.stepper_steps * github.event.inputs.micro_steps * gear_reduction_ratio * final_reduction/360.0 }
+        sed -i 's/^#define[[:space:]]\+AXIS1_STEPS_PER_DEGREE[[:space:]]\+.*$/#define AXIS1_STEPS_PER_DEGREE $((temp_var))/' Config.h
         grep "^#define PEC_STEPS_PER_WORM_ROTATION" Config.h || echo "     PEC_STEPS_PER_WORM_ROTATION : not defined"
         echo ""
         echo "Source files:"
