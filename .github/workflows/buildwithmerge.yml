@@ -211,20 +211,32 @@ jobs:
         grep "^#define AXIS1_DRIVER_REVERSE" Config.h || echo "     AXIS1_DRIVER_REVERSE : not defined"
         grep "^#define AXIS2_DRIVER_REVERSE" Config.h || echo "     AXIS2_DRIVER_REVERSE : not defined"
         grep "^#define MOUNT_TYPE" Config.h || echo "     MOUNT_TYPE : not defined"
-        grep "^#define AXIS1_STEPS_PER_DEGREE" Config.h || echo "     AXIS1_STEPS_PER_DEGREE : not defined"
-
+        grep "^#define PEC_STEPS_PER_WORM_ROTATION" Config.h || echo "     PEC_STEPS_PER_WORM_ROTATION : not defined"
+        
         temp_var=$(( 
             ${{ github.event.inputs.stepper_steps }} *
             ${{ github.event.inputs.micro_steps }} *
             ${{ github.event.inputs.gear_reduction_ratio }} *
             ${{ github.event.inputs.final_reduction }} / 360
         ))
-        echo $temp_var
         sed -i "s/^#define[[:space:]]\+AXIS1_STEPS_PER_DEGREE[[:space:]]\+.*$/#define AXIS1_STEPS_PER_DEGREE $temp_var/" Config.h
-
         grep "^#define AXIS1_STEPS_PER_DEGREE" Config.h || echo "     AXIS1_STEPS_PER_DEGREE : not defined"
+        sed -i "s/^#define[[:space:]]\+AXIS2_STEPS_PER_DEGREE[[:space:]]\+.*$/#define AXIS2_STEPS_PER_DEGREE $temp_var/" Config.h
+        grep "^#define AXIS2_STEPS_PER_DEGREE" Config.h || echo "     AXIS2_STEPS_PER_DEGREE : not defined"
         
+        sed -i "s/^#define[[:space:]]\+AXIS1_DRIVER_MICROSTEPS[[:space:]]\+.*$/#define AXIS1_DRIVER_MICROSTEPS ${{ github.event.inputs.micro_steps }}/" Config.h
+        grep "^#define AXIS1_DRIVER_MICROSTEPS" Config.h || echo "     AXIS1_DRIVER_MICROSTEPS : not defined"
+        sed -i "s/^#define[[:space:]]\+AXIS2_DRIVER_MICROSTEPS[[:space:]]\+.*$/#define AXIS2_DRIVER_MICROSTEPS ${{ github.event.inputs.micro_steps }}/" Config.h
+        grep "^#define AXIS2_DRIVER_MICROSTEPS" Config.h || echo "     AXIS2_DRIVER_MICROSTEPS : not defined"
+
+        temp_var=$(( 
+            ${{ github.event.inputs.stepper_steps }} *
+            ${{ github.event.inputs.micro_steps }} *
+            ${{ github.event.inputs.gear_reduction_ratio }}
+        ))
+        sed -i "s/^#define[[:space:]]\+PEC_STEPS_PER_WORM_ROTATION[[:space:]]\+.*$/#define PEC_STEPS_PER_WORM_ROTATION $temp_var/" Config.h
         grep "^#define PEC_STEPS_PER_WORM_ROTATION" Config.h || echo "     PEC_STEPS_PER_WORM_ROTATION : not defined"
+
         echo ""
         echo "Source files:"
         echo "  Main file: $(ls *.ino 2>/dev/null || echo 'Not found')"
