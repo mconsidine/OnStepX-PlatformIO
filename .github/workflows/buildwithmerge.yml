@@ -196,7 +196,7 @@ jobs:
     
     - name: Display final configuration
       run: |
-        sed -i '/^#define[[:space:]]\+PINMAP[[:space:]]/a #define HOST_NAME OnStepX' Config.h
+        #sed -i '/^#define[[:space:]]\+PINMAP[[:space:]]/a #define HOST_NAME OnStepX' Config.h
         echo "=== Final Build Configuration ==="
         echo ""
         echo "Config.h defines: $(grep -c "^#define" Config.h)"
@@ -237,6 +237,9 @@ jobs:
         ))
         sed -i "s/^#define[[:space:]]\+PEC_STEPS_PER_WORM_ROTATION[[:space:]]\+.*$/#define PEC_STEPS_PER_WORM_ROTATION $temp_var/" Config.h
         grep "^#define PEC_STEPS_PER_WORM_ROTATION[[:space:]]" Config.h || echo "     PEC_STEPS_PER_WORM_ROTATION : not defined"
+
+        sed -i "s/^#define[[:space:]]\+HOST_NAME[[:space:]]\+.*$/#define HOST_NAME OnStepX/" Config.h
+        grep "^#define HOST_NAME[[:space:]]" Config.h || echo "     HOST_NAME : not defined"
 
         echo ""
         echo "Source files:"
