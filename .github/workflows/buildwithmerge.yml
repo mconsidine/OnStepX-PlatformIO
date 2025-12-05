@@ -196,6 +196,7 @@ jobs:
     
     - name: Display final configuration
       run: |
+        sed -i "s/^#define[[:space:]]\+PINMAP[[:space:]]\+.*$/#define HOST_NAME OnStepX" Config.h
         echo "=== Final Build Configuration ==="
         echo ""
         echo "Config.h defines: $(grep -c "^#define" Config.h)"
