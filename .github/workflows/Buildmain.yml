@@ -71,6 +71,9 @@ jobs:
     
     - name: Display final configuration
       run: |
+        sed -i "s/^#define[[:space:]]\+SERIAL_B_BAUD_DEFAULT[[:space:]]\+.*$/#define SERIAL_B_BAUD_DEFAULT OFF/" Config.h
+        grep "^#define SERIAL_B_BAUD_DEFAULT[[:space:]]" Config.h || echo "     serial b baud default : not defined"
+        
         echo "=== Final Build Configuration ==="
         echo ""
         echo "Config.h defines: $(grep -c "^#define" Config.h)"
