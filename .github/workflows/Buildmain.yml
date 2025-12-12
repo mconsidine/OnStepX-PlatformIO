@@ -32,7 +32,7 @@ jobs:
         # Clean up the temporary directory
         rm -rf external_odrive_checkout
     
-    - name: Copy complete E4 source from upstream
+    - name: Copy complete nain source from upstream
       run: |
         echo "Adding upstream remote and fetching branches..."
         git remote add upstream https://github.com/hjd1964/OnStepX.git
