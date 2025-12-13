@@ -103,7 +103,7 @@ jobs:
         echo ""
         echo "Root source files:"
         ls -la *.ino *.cpp *.h 2>/dev/null || echo "No root source files"
-        grep "^Firmware" OnStep.ino
+        grep "^Firmware" OnStepX.ino
         
     - name: Merge Config.h files (E4 + main)
       if: github.event.inputs.merge_configs == 'yes'
