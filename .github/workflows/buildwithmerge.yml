@@ -79,7 +79,6 @@ jobs:
         git branch -r
         git fetch upstream E4:upstream-e4
         git fetch upstream main:upstream-main
-        
         echo "Copying complete src/ directory from E4 branch..."
         echo "This ensures we get all dependencies including global NVS instance"
         
