@@ -1,0 +1,193 @@
+name: Build OnStepX for FYSETC E4 (Complete)
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_variant:
+        description: 'Firmware variant to build'
+        required: true
+        default: 'E4'
+        options:
+          - E4
+          - main-only
+
+      config_branch:
+        description: 'Branch containing custom config files (optional)'
+        required: false
+        default: ''
+
+      merge_configs:
+        description: 'Merge E4 and main Config.h? (yes/no)'
+        required: false
+        default: 'yes'
+
+      stepper_steps:
+        required: true
+        default: 400
+        options: [200, 400]
+
+      micro_steps:
+        required: true
+        default: 32
+        options: [16, 32, 64]
+
+      gear_reduction_ratio:
+        required: true
+        default: 3
+        options: [2, 3, 4, 5]
+
+      final_reduction:
+        required: true
+        default: 144
+        options: [144, 360]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    # ------------------------------------------------------------
+    # Checkout MAIN (authoritative base)
+    # ------------------------------------------------------------
+    - name: Checkout main branch (latest)
+      uses: actions/checkout@v4
+      with:
+        ref: main
+        fetch-depth: 0
+        submodules: recursive
+
+    - name: Capture main commit
+      run: |
+        MAIN_SHA=$(git rev-parse HEAD)
+        echo "MAIN_SHA=$MAIN_SHA" >> $GITHUB_ENV
+        echo "Main SHA: $MAIN_SHA"
+
+    # ------------------------------------------------------------
+    # Checkout E4 (reference overlay)
+    # ------------------------------------------------------------
+    - name: Checkout E4 branch (latest)
+      if: github.event.inputs.build_variant == 'E4'
+      uses: actions/checkout@v4
+      with:
+        repository: hjd1964/OnStepX
+        ref: E4
+        fetch-depth: 0
+        path: upstream-e4
+
+    - name: Capture E4 commit
+      if: github.event.inputs.build_variant == 'E4'
+      run: |
+        cd upstream-e4
+        E4_SHA=$(git rev-parse HEAD)
+        echo "E4_SHA=$E4_SHA" >> $GITHUB_ENV
+        echo "E4 SHA: $E4_SHA"
+
+    # ------------------------------------------------------------
+    # Overlay E4 sources
+    # ------------------------------------------------------------
+    - name: Apply E4 source overlay
+      if: github.event.inputs.build_variant == 'E4'
+      run: |
+        echo "Overlaying E4 sources..."
+
+        rm -rf src/plugins
+        cp -a upstream-e4/src/plugins src/
+
+        cp -a upstream-e4/*.ino . 2>/dev/null || true
+        cp -a upstream-e4/*.cpp . 2>/dev/null || true
+        cp -a upstream-e4/*.h   . 2>/dev/null || true
+
+    # ------------------------------------------------------------
+    # Diff summary (what E4 changed)
+    # ------------------------------------------------------------
+    - name: Generate E4 diff summary
+      if: github.event.inputs.build_variant == 'E4'
+      run: |
+        echo "### 🔀 E4 Overlay Diff" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+
+        diff -rq upstream-e4 src || true
+
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+        diff -rq upstream-e4 src || true
+        echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+
+    # ------------------------------------------------------------
+    # Merge Config.h
+    # ------------------------------------------------------------
+    - name: Merge Config.h (E4 + main)
+      if: github.event.inputs.merge_configs == 'yes' && github.event.inputs.build_variant == 'E4'
+      run: |
+        cp upstream-e4/Config.h Config-e4.h
+        cp Config.h Config-main.h
+
+        cp Config-e4.h Config.h
+
+        grep "^#define" Config-e4.h | awk '{print $2}' | sort > e4.txt
+        grep "^#define" Config-main.h | awk '{print $2}' | sort > main.txt
+
+        comm -23 main.txt e4.txt > main-only.txt
+
+        if [ -s main-only.txt ]; then
+          echo "" >> Config.h
+          echo "// ==== Added from main ====" >> Config.h
+          while read def; do
+            awk "/^#define $def/{print}" Config-main.h >> Config.h
+          done < main-only.txt
+        fi
+
+        rm -f Config-e4.h Config-main.h e4.txt main.txt main-only.txt
+
+    # ------------------------------------------------------------
+    # PlatformIO build
+    # ------------------------------------------------------------
+    - name: Install PlatformIO
+      run: |
+        pip install platformio
+
+    - name: Build firmware
+      run: |
+        pio run -e esp32dev
+
+    # ------------------------------------------------------------
+    # Firmware info (commit locking)
+    # ------------------------------------------------------------
+    - name: Create firmware-info.txt
+      run: |
+        {
+          echo "OnStepX FYSETC E4 Firmware"
+          echo "========================="
+          echo ""
+          echo "Build Variant: ${{ github.event.inputs.build_variant }}"
+          echo "Main Commit:   $MAIN_SHA"
+          echo "E4 Commit:     ${E4_SHA:-N/A}"
+          echo "Build Date:    $(date -u)"
+        } > firmware-info.txt
+
+    # ------------------------------------------------------------
+    # Upload artifacts
+    # ------------------------------------------------------------
+    - name: Upload firmware artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: onstepx-firmware
+        path: |
+          .pio/build/esp32dev/firmware.bin
+          .pio/build/esp32dev/firmware.elf
+          .pio/build/esp32dev/bootloader.bin
+          .pio/build/esp32dev/partitions.bin
+          Config.h
+          firmware-info.txt
+        retention-days: 30
+
+    # ------------------------------------------------------------
+    # Build summary
+    # ------------------------------------------------------------
+    - name: Final build summary
+      run: |
+        echo "### ✅ Build Complete" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Variant:** ${{ github.event.inputs.build_variant }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Main SHA:** \`$MAIN_SHA\`" >> $GITHUB_STEP_SUMMARY
+        echo "**E4 SHA:** \`${E4_SHA:-N/A}\`" >> $GITHUB_STEP_SUMMARY
+        
