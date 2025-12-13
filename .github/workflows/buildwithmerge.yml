@@ -76,6 +76,7 @@ jobs:
       run: |
         echo "Adding upstream remote and fetching branches..."
         git remote add upstream https://github.com/hjd1964/OnStepX.git
+        git branch -r
         git fetch upstream E4:upstream-e4
         git fetch upstream main:upstream-main
         
