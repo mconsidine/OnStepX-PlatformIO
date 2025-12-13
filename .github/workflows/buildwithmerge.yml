@@ -49,10 +49,10 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
-    - name: Checkout OnStepX repository
-      uses: actions/checkout@v4
-      with:
-        submodules: recursive
+    #- name: Checkout OnStepX repository
+    #  uses: actions/checkout@v4
+    #  with:
+    #    submodules: recursive
         
     # get local version of ODrive library and install
     - name: Copy External 'ODriveArduino' Library
@@ -71,7 +71,13 @@ jobs:
         mv external_odrive_checkout/Arduino/ODriveArduino lib/
         # Clean up the temporary directory
         rm -rf external_odrive_checkout
-     
+    - name: Checkout OnStepX repository
+      uses: actions/checkout@v4
+      with:
+        ref: main
+        fetch-depth: 0
+        submodules: recursive
+    
     - name: Copy complete E4 source from upstream
       run: |
         echo "Adding upstream remote and fetching branches..."
