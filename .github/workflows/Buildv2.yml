@@ -7,12 +7,11 @@ on:
         description: 'Source to build'
         required: true
         default: main-head
-        options: [
-          'release-v10.18c',
-          'release-v10.20a',
-          'release-v10.24c',
-          'main-head',
-          'e4-head',
+        options: ['release-v10.18c', \
+          'release-v10.20a', \
+          'release-v10.24c', \
+          'main-head', \
+          'e4-head', \
           'main-head+e4-overlay']
 
 jobs:
