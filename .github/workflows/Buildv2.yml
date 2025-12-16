@@ -2,8 +2,6 @@ name: Build OnStepX (vendored)
 
 on:
   workflow_dispatch:
-    branches:
-      - main
     inputs:
       build_target:
         type: choice
@@ -243,18 +241,18 @@ jobs:
         sed -i "s/^#define[[:space:]]\+PEC_STEPS_PER_WORM_ROTATION[[:space:]]\+.*$/#define PEC_STEPS_PER_WORM_ROTATION $temp_var/" Config.h
         grep "^#define PEC_STEPS_PER_WORM_ROTATION[[:space:]]" Config.h || echo "     PEC_STEPS_PER_WORM_ROTATION : not defined"
 
-        echo "Check folder structure of ./"
-        cd ./
+        echo "Check folder structure of ."
+        cd .
         ls -la
         cd ..
         
-        echo "Check folder structure of ./src"
-        cd ./src
+        echo "Check folder structure of src"
+        cd src
         ls -la
         cd ..
         
-        echo "Check folder structure of ./onstepx-src"
-        cd ./onstepx-src
+        echo "Check folder structure of onstepx-src"
+        cd onstepx-src
         ls -la
         cd ..
         
