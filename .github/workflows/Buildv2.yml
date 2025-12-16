@@ -242,8 +242,22 @@ jobs:
         ))
         sed -i "s/^#define[[:space:]]\+PEC_STEPS_PER_WORM_ROTATION[[:space:]]\+.*$/#define PEC_STEPS_PER_WORM_ROTATION $temp_var/" Config.h
         grep "^#define PEC_STEPS_PER_WORM_ROTATION[[:space:]]" Config.h || echo "     PEC_STEPS_PER_WORM_ROTATION : not defined"
-  
+
+        echo "Check folder structure of ./src"
+        cd ./src
+        ls -la
+        cd ..
+        echo "Check folder structure of ./onstepx-src"
+        cd ./onstepx-src
+        ls -la
+        cd ..
+        echo "Check folder structure of ./onstepx-e4"
+        cd ./onstepx-e4
+        ls -la
+        cd ..
+        
         # Replace Config.h in staged source
+        echo "Replacing config.h
         cp Config.h src/Config.h
         ## cp Extended.config.h src/Extended.config.h 2>/dev/null || true
 
