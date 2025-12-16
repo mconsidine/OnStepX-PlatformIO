@@ -145,13 +145,46 @@ jobs:
     - name: Apply E4 overlay
       if: github.event.inputs.build_target == 'main-head+e4-overlay'
       run: |
-        echo "Applying E4 overlay"
+        ## echo "Applying E4 overlay"
+        echo "Merging E4 overlay with main"
+        # --------------------------------------
+        # Merge Config.h
+        # --------------------------------------
+        cp onstepx-e4/Config.h Config-e4.h
+        cp Config.h Config-main.h
+        cp Config-e4.h Config.h
 
-        cp onstepx-e4/Config.h . 2>/dev/null || true
-        cp onstepx-e4/Extended.config.h . 2>/dev/null || true
+        grep "^#define" Config-main.h | awk '{print $2}' | sort > main.txt
+        grep "^#define" Config-e4.h  | sort > e4.txt
+        comm -23 main.txt e4.txt > main-only.txt
 
-        rm -rf src/plugins
-        cp -a onstepx-e4/src/plugins src/
+        if [ -s main-only.txt ]; then
+          echo "" >> Config.h
+          echo "// ==== Added from main ====" >> Config.h
+          while read def; do
+            awk "/^#define $def/{print}" Config-main.h >> Config.h
+          done < main-only.txt
+        fi
+
+        rm -f Config-e4.h Config-main.h main.txt e4.txt main-only.txt
+
+        ## cp onstepx-e4/Config.h . 2>/dev/null || true
+        
+        ## cp onstepx-e4/Extended.config.h . 2>/dev/null || true
+        # --------------------------------------
+        # Merge Extended.config.h (if exists)
+        # --------------------------------------
+        if [ -f onstepx-e4/Extended.config.h ]; then
+          cp onstepx-e4/Extended.config.h .
+        fi
+    
+        ## rm -rf src/plugins
+        ## cp -a onstepx-e4/src/plugins src/
+        # --------------------------------------
+        # Merge plugin folder
+        # --------------------------------------
+        mkdir -p src/plugins
+        rsync -av --ignore-existing onstepx-e4/src/plugins/ src/plugins/
 
     # ------
     # Apply Config settings
