@@ -1,4 +1,4 @@
-name: Build OnStepX for FYSETC E4 (Complete)
+name: Build OnStepX for FYSETC E4 with main and E4 config.h
 
 # This workflow only runs when manually triggered
 on:
