@@ -4,6 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       build_target:
+        type: choice
         description: 'Source to build'
         required: true
         default: main-head
@@ -16,6 +17,7 @@ on:
         - main-head+e4-overlay
         
       pin_map:
+        type: choice
         description: 'Pin map'
         required: true
         default: FYSETC-E4
@@ -29,6 +31,7 @@ on:
         - MiniPCB2
         
       driver_model:
+        type: choice
         description: 'Motor driver model'
         required: true
         default: TMC2209
@@ -43,6 +46,7 @@ on:
         - TMC2226
         
       stepper_steps:
+        type: choice
         description: 'Stepper motor steps'
         required: true
         default: 400
@@ -51,6 +55,7 @@ on:
         - 400
         
       micro_steps:
+        type: choice
         description: 'Microsteps'
         required: true
         default: 32
@@ -60,6 +65,7 @@ on:
         - 64
         
       gear_reduction_ratio:
+        type: choice
         description: 'Reduction from motor to worm'
         required: true
         default: 3
@@ -70,10 +76,13 @@ on:
         - 5
         
       final_reduction:
+        type: choice
         description: 'Teeth in worm gear'
         required: true
         default: 144
-        options: [144, 360]
+        options:
+        - 144
+        - 360
         
 jobs:
   build:
