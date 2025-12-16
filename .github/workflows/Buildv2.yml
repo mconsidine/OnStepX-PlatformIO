@@ -7,13 +7,57 @@ on:
         description: 'Source to build'
         required: true
         default: main-head
-        options: ['release-v10.18c', \
-          'release-v10.20a', \
-          'release-v10.24c', \
-          'main-head', \
-          'e4-head', \
-          'main-head+e4-overlay']
-
+        options: 
+        - release-v10.18c
+        - release-v10.20a
+        - release-v10.24c
+        - main-head
+        - e4-head'
+        - main-head+e4-overlay
+      pin_map:
+        description: 'Pin map'
+        required: true
+        default: FYSETC-E4
+        options:
+        - FYSETC-E4
+      driver_model:
+        description: 'Motor driver model'
+        required: true
+        default: TMC2209
+        options: 
+        - TMC2209
+      stepper_steps:
+        description: 'Stepper motor steps'
+        required: true
+        default: 400
+        options:
+        - 200
+        - 400
+      micro_steps:
+        description: 'Microsteps'
+        required: true
+        default: 32
+        options:
+        - 16
+        - 32
+        - 64
+      gear_reduction_ratio:
+        description: 'Reduction from motor to worm'
+        required: true
+        default: 3
+        options:
+        - 2
+        - 3
+        - 4
+        - 5
+      final_reduction:
+        description: 'Teeth in worm gear'
+        required: true
+        default: 144
+        options:
+        - 144
+        - 360
+        
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -69,16 +113,6 @@ jobs:
         cp onstepx-src/Config.h . 2>/dev/null || true
         cp onstepx-src/Extended.config.h . 2>/dev/null || true
         
-    # ------
-    # Apply Config settings to primary OnStepX
-    # ------
-    - name: Apply config settings to src
-      run: |
-        echo "Applying Config.h patches"
-        
-        sed -i "s/^#define[[:space:]]\+SERIAL_B_BAUD_DEFAULT[[:space:]]\+.*$/#define SERIAL_B_BAUD_DEFAULT OFF/" Config.h
-        grep "^#define SERIAL_B_BAUD_DEFAULT[[:space:]]" Config.h || echo "     Serial B Baud Default : not defined"
-
     # ------------------------------------------------------------
     # Apply E4 overlay (config + plugins only)
     # ------------------------------------------------------------
@@ -92,6 +126,32 @@ jobs:
 
         rm -rf src/plugins
         cp -a onstepx-e4/src/plugins src/
+
+    # ------
+    # Apply Config settings
+    # ------
+    - name: Apply config settings to src
+      run: |
+        echo "Applying Config.h patches"
+        
+        grep "^#define PINMAP" Config.h || echo "     PINMAP: not defined"
+        grep "^#define STATUS_LED" Config.h || echo "     STATUS_LED: not defined"
+        grep "^#define AXIS1_DRIVER_MODEL" Config.h || echo "     AXIS1_DRIVER_MODEL: not defined"
+        grep "^#define AXIS2_DRIVER_MODEL" Config.h || echo "     AXIS2_DRIVER_MODEL: not defined"
+        grep "^#define AXIS1_STEPS_PER_DEGREE" Config.h || echo "     AXIS1_STEPS_PER_DEGREE: not defined"
+        grep "^#define AXIS2_STEPS_PER_DEGREE" Config.h || echo "     AXIS2_STEPS_PER_DEGREE: not defined"
+        grep "^#define AXIS1_DRIVER_MICROSTEPS" Config.h || echo "     AXIS1_DRIVER_MICROSTEPS: not defined"
+        grep "^#define AXIS2_DRIVER_MICROSTEPS" Config.h || echo "     AXIS2_DRIVER_MICROSTEPS: not defined"
+        grep "^#define AXIS1_DRIVER_REVERSE" Config.h || echo "     AXIS1_DRIVER_REVERSE : not defined"
+        grep "^#define AXIS2_DRIVER_REVERSE" Config.h || echo "     AXIS2_DRIVER_REVERSE : not defined"
+        grep "^#define MOUNT_TYPE" Config.h || echo "     MOUNT_TYPE : not defined"
+        grep "^#define PEC_STEPS_PER_WORM_ROTATION" Config.h || echo "     PEC_STEPS_PER_WORM_ROTATION : not defined"
+  
+        sed -i "s/^#define[[:space:]]\+HOST_NAME[[:space:]]\+.*$/#define HOST_NAME OnStepX/" Config.h
+        grep "^#define HOST_NAME[[:space:]]" Config.h || echo "     HOST_NAME : not defined"
+   
+        sed -i "s/^#define[[:space:]]\+SERIAL_B_BAUD_DEFAULT[[:space:]]\+.*$/#define SERIAL_B_BAUD_DEFAULT OFF/" Config.h
+        grep "^#define SERIAL_B_BAUD_DEFAULT[[:space:]]" Config.h || echo "     Serial B Baud Default : not defined"
 
     # ------------------------------------------------------------
     # Build with PlatformIO
