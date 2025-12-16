@@ -97,24 +97,24 @@ jobs:
     # ------------------------------------------------------------
     # Vendor ODrive Arduino library (non-PlatformIO layout)
     # ------------------------------------------------------------
-    - name: Vendor ODriveArduino library
-      run: |
-        echo "Vendoring ODriveArduino library"
+    #- name: Vendor ODriveArduino library
+    #  run: |
+    #    echo "Vendoring ODriveArduino library"
 
-        # Clean any previous copy
-        rm -rf lib/ODriveArduino
-        mkdir -p lib
+    #    # Clean any previous copy
+    #    rm -rf lib/ODriveArduino
+    #    mkdir -p lib
 
-        # Clone ODrive repo
-        git clone --depth 1 --branch 4a7c9b1 \
-          https://github.com/odriverobotics/ODrive.git \
-          external_odrive
+    #    # Clone ODrive repo
+    #    git clone --depth 1 --branch 4a7c9b1 \
+    #      https://github.com/odriverobotics/ODrive.git \
+    #      external_odrive
 
-        # Move only the Arduino library into lib/
-        mv external_odrive/Arduino/ODriveArduino lib/
+    #    # Move only the Arduino library into lib/
+    #    mv external_odrive/Arduino/ODriveArduino lib/
 
-        # Cleanup temp clone
-        rm -rf external_odrive
+    #    # Cleanup temp clone
+    #    rm -rf external_odrive
 
     # ------------------------------------------------------------
     # Build with PlatformIO
