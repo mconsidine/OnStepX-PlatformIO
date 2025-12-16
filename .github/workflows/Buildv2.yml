@@ -169,6 +169,12 @@ jobs:
    
         sed -i "s/^#define[[:space:]]\+SERIAL_B_BAUD_DEFAULT[[:space:]]\+.*$/#define SERIAL_B_BAUD_DEFAULT OFF/" Config.h
         grep "^#define SERIAL_B_BAUD_DEFAULT[[:space:]]" Config.h || echo "     Serial B Baud Default : not defined"
+
+        temp_var=$(( ${{ github.event.inputs.driver_model }} ))
+        sed -i "s/^#define[[:space:]]\+AXIS1_DRIVER_MODEL[[:space:]]\+.*$/#define AXIS1_DRIVER_MODEL $temp_var/" Config.h
+        grep "^#define AXIS1_DRIVER_MODEL[[:space:]]" Config.h || echo "     AXIS1_DRIVER_MODEL : not defined"
+        sed -i "s/^#define[[:space:]]\+AXIS2_DRIVER_MODEL[[:space:]]\+.*$/#define AXIS2_DRIVER_MODEL $temp_var/" Config.h
+        grep "^#define AXIS2_DRIVER_MODEL[[:space:]]" Config.h || echo "     AXIS2_DRIVER_MODEL : not defined"
         
         temp_var=$(( 
             ${{ github.event.inputs.stepper_steps }} *
