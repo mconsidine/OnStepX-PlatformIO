@@ -2,6 +2,8 @@ name: Build OnStepX (vendored)
 
 on:
   workflow_dispatch:
+    branches:
+      - main
     inputs:
       build_target:
         type: choice
@@ -34,7 +36,7 @@ on:
         type: choice
         description: 'Motor driver model'
         required: true
-        default: TMC2209
+        default: 'TMC2209'
         options: 
         - A4988
         - DRV8825
@@ -213,9 +215,9 @@ jobs:
         grep "^#define SERIAL_B_BAUD_DEFAULT[[:space:]]" Config.h || echo "     Serial B Baud Default : not defined"
 
         temp_var=$(( ${{ github.event.inputs.driver_model }} ))
-        sed -i "s/^#define[[:space:]]\+AXIS1_DRIVER_MODEL[[:space:]]\+.*$/#define AXIS1_DRIVER_MODEL $temp_var/" Config.h
+        sed -i "s/^#define[[:space:]]\+AXIS1_DRIVER_MODEL[[:space:]]\+.*$/#define AXIS1_DRIVER_MODEL github.event.inputs.driver_model/" Config.h
         grep "^#define AXIS1_DRIVER_MODEL[[:space:]]" Config.h || echo "     AXIS1_DRIVER_MODEL : not defined"
-        sed -i "s/^#define[[:space:]]\+AXIS2_DRIVER_MODEL[[:space:]]\+.*$/#define AXIS2_DRIVER_MODEL $temp_var/" Config.h
+        sed -i "s/^#define[[:space:]]\+AXIS2_DRIVER_MODEL[[:space:]]\+.*$/#define AXIS2_DRIVER_MODEL github.event.inputs.driver_model/" Config.h
         grep "^#define AXIS2_DRIVER_MODEL[[:space:]]" Config.h || echo "     AXIS2_DRIVER_MODEL : not defined"
         
         temp_var=$(( 
