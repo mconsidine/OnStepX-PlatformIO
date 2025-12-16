@@ -80,10 +80,11 @@ jobs:
     # ------------------------------------------------------------
     # Sanity checks
     # ------------------------------------------------------------
-    - name: Verify tree integrity
+    - name: Verify PlatformIO source tree
       run: |
-        test -f platformio.ini
-        test -f src/Common.h || (echo "Common.h missing!" && exit 1)
+        test -f platformio.ini || exit 1
+        test -d src || exit 1
+        find src -name "*.cpp" | grep -q . || exit 1
 
     # ------------------------------------------------------------
     # PlatformIO build
