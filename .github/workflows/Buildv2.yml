@@ -144,9 +144,18 @@ jobs:
     - name: Install PlatformIO
       run: |
         pip install platformio
-
+        
     - name: Build firmware
       run: |
+        echo "Current folder structure"
+        ls -la
+        cat Config.h
+        echo "-----"
+        cat Extended.config.h
+        echo "End of current folder structure"
+        echo "Partitions:"
+        ls ~/.platformio/packages/framework-arduinoespressif32/tools/partitions
+        echo "Building OnStepX for E4..."
         pio run -e esp32dev
 
     # ------------------------------------------------------------
