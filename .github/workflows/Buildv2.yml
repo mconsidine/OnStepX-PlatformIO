@@ -257,7 +257,7 @@ jobs:
         cd ..
         
         # Replace Config.h in staged source
-        echo "Replacing config.h
+        echo "Replacing config.h"
         cp Config.h src/Config.h
         ## cp Extended.config.h src/Extended.config.h 2>/dev/null || true
 
