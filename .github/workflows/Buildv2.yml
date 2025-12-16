@@ -126,120 +126,224 @@ jobs:
     # ------------------------------------------------------------
     # Stage sources into PlatformIO project
     # ------------------------------------------------------------
+    #- name: Stage OnStepX sources
+    #  run: |
+    #    echo "Staging OnStepX source tree"
+
+    #    rm -rf src
+    #    mkdir -p src
+
+    #    cp -a onstepx-src/src/. src/
+
+    #    # Config files (if present)
+    #    cp onstepx-src/Config.h . 2>/dev/null || true
+    #    cp onstepx-src/Extended.config.h . 2>/dev/null || true
+    # ------------------------------------------------------------
+    # Stage OnStepX sources into PlatformIO project
+    # ------------------------------------------------------------
     - name: Stage OnStepX sources
       run: |
         echo "Staging OnStepX source tree"
 
+        # Clear old staged folder
         rm -rf src
-        mkdir -p src
+        mkdir -p src/src   # <-- nested 'src' for actual source files
 
-        cp -a onstepx-src/src/. src/
+        # Copy all OnStepX source files into src/src/
+        cp -a onstepx-src/src/. src/src/
 
-        # Config files (if present)
-        cp onstepx-src/Config.h . 2>/dev/null || true
-        cp onstepx-src/Extended.config.h . 2>/dev/null || true
+        # Copy top-level files (Config.h, Extended.config.h, *.ino) to src/
+        cp onstepx-src/Config.h src/ 2>/dev/null || true
+        cp onstepx-src/Extended.config.h src/ 2>/dev/null || true
+        cp onstepx-src/*.ino src/ 2>/dev/null || true
         
     # ------------------------------------------------------------
     # Apply E4 overlay (config + plugins only)
     # ------------------------------------------------------------
-    - name: Apply E4 overlay
-      if: github.event.inputs.build_target == 'main-head+e4-overlay'
-      run: |
-        ## echo "Applying E4 overlay"
-        echo "Merging E4 overlay with main"
-        # --------------------------------------
-        # Merge Config.h
-        # --------------------------------------
-        cp onstepx-e4/Config.h Config-e4.h
-        cp Config.h Config-main.h
-        cp Config-e4.h Config.h
+    #- name: Apply E4 overlay
+    #  if: github.event.inputs.build_target == 'main-head+e4-overlay'
+    #  run: |
+    #    ## echo "Applying E4 overlay"
+    #    echo "Merging E4 overlay with main"
+    #    # --------------------------------------
+    #    # Merge Config.h
+    #    # --------------------------------------
+    #    cp onstepx-e4/Config.h Config-e4.h
+    #    cp Config.h Config-main.h
+    #    cp Config-e4.h Config.h
 
-        grep "^#define" Config-main.h | awk '{print $2}' | sort > main.txt
-        grep "^#define" Config-e4.h  | sort > e4.txt
-        comm -23 main.txt e4.txt > main-only.txt
+    #    grep "^#define" Config-main.h | awk '{print $2}' | sort > main.txt
+    #    grep "^#define" Config-e4.h  | sort > e4.txt
+    #    comm -23 main.txt e4.txt > main-only.txt
 
-        if [ -s main-only.txt ]; then
-          echo "" >> Config.h
-          echo "// ==== Added from main ====" >> Config.h
-          while read def; do
-            awk "/^#define $def/{print}" Config-main.h >> Config.h
-          done < main-only.txt
-        fi
+    #    if [ -s main-only.txt ]; then
+    #      echo "" >> Config.h
+    #      echo "// ==== Added from main ====" >> Config.h
+    #      while read def; do
+    #        awk "/^#define $def/{print}" Config-main.h >> Config.h
+    #      done < main-only.txt
+    #    fi
 
-        rm -f Config-e4.h Config-main.h main.txt e4.txt main-only.txt
+    #    rm -f Config-e4.h Config-main.h main.txt e4.txt main-only.txt
 
-        cp onstepx-e4/Config.h . 2>/dev/null || true
+    #    cp onstepx-e4/Config.h . 2>/dev/null || true
         
-        ## cp onstepx-e4/Extended.config.h . 2>/dev/null || true
-        # --------------------------------------
-        # Merge Extended.config.h (if exists)
-        # --------------------------------------
-        if [ -f onstepx-e4/Extended.config.h ]; then
-          cp onstepx-e4/Extended.config.h .
-        fi
+    #    ## cp onstepx-e4/Extended.config.h . 2>/dev/null || true
+    #    # --------------------------------------
+    #    # Merge Extended.config.h (if exists)
+    #    # --------------------------------------
+    #    if [ -f onstepx-e4/Extended.config.h ]; then
+    #      cp onstepx-e4/Extended.config.h .
+    #    fi
     
-        ## rm -rf src/plugins
-        ## cp -a onstepx-e4/src/plugins src/
-        # --------------------------------------
-        # Merge plugin folder
-        # --------------------------------------
-        mkdir -p src/plugins
-        rsync -av --ignore-existing onstepx-e4/src/plugins/ src/plugins/
+    #    ## rm -rf src/plugins
+    #    ## cp -a onstepx-e4/src/plugins src/
+    #    # --------------------------------------
+    #    # Merge plugin folder
+    #    # --------------------------------------
+    #    mkdir -p src/plugins
+    #    rsync -av --ignore-existing onstepx-e4/src/plugins/ src/plugins/
 
+# ------------------------------------------------------------
+# Apply E4 overlay (config + plugins only)
+# ------------------------------------------------------------
+- name: Apply E4 overlay
+  if: github.event.inputs.build_target == 'main-head+e4-overlay'
+  run: |
+    echo "Merging E4 overlay with main"
+
+    # Merge Config.h
+    cp onstepx-e4/Config.h src/Config-e4.h
+    cp src/Config.h src/Config-main.h
+    cp src/Config-e4.h src/Config.h
+
+    grep "^#define" src/Config-main.h | awk '{print $2}' | sort > main.txt
+    grep "^#define" src/Config-e4.h  | sort > e4.txt
+    comm -23 main.txt e4.txt > main-only.txt
+
+    if [ -s main-only.txt ]; then
+      echo "" >> src/Config.h
+      echo "// ==== Added from main ====" >> src/Config.h
+      while read def; do
+        awk "/^#define $def/{print}" src/Config-main.h >> src/Config.h
+      done < main-only.txt
+    fi
+
+    rm -f src/Config-e4.h src/Config-main.h main.txt e4.txt main-only.txt
+
+    # Merge Extended.config.h if it exists
+    if [ -f onstepx-e4/Extended.config.h ]; then
+      cp onstepx-e4/Extended.config.h src/
+    fi
+
+    # Merge plugin folder into src/src/plugins/
+    mkdir -p src/src/plugins
+    rsync -av --ignore-existing onstepx-e4/src/plugins/ src/src/plugins/
+    
     # ------
     # Apply Config settings
     # ------
-    - name: Apply config settings to src
-      run: |
-        echo "Applying Config.h patches"
+    #- name: Apply config settings to src
+    #  run: |
+    #    echo "Applying Config.h patches"
         
-        grep "^#define PINMAP" Config.h || echo "     PINMAP: not defined"
-        grep "^#define STATUS_LED" Config.h || echo "     STATUS_LED: not defined"
-        grep "^#define AXIS1_DRIVER_MODEL" Config.h || echo "     AXIS1_DRIVER_MODEL: not defined"
-        grep "^#define AXIS2_DRIVER_MODEL" Config.h || echo "     AXIS2_DRIVER_MODEL: not defined"
-        grep "^#define AXIS1_STEPS_PER_DEGREE" Config.h || echo "     AXIS1_STEPS_PER_DEGREE: not defined"
-        grep "^#define AXIS2_STEPS_PER_DEGREE" Config.h || echo "     AXIS2_STEPS_PER_DEGREE: not defined"
-        grep "^#define AXIS1_DRIVER_MICROSTEPS" Config.h || echo "     AXIS1_DRIVER_MICROSTEPS: not defined"
-        grep "^#define AXIS2_DRIVER_MICROSTEPS" Config.h || echo "     AXIS2_DRIVER_MICROSTEPS: not defined"
-        grep "^#define AXIS1_DRIVER_REVERSE" Config.h || echo "     AXIS1_DRIVER_REVERSE : not defined"
-        grep "^#define AXIS2_DRIVER_REVERSE" Config.h || echo "     AXIS2_DRIVER_REVERSE : not defined"
-        grep "^#define MOUNT_TYPE" Config.h || echo "     MOUNT_TYPE : not defined"
-        grep "^#define PEC_STEPS_PER_WORM_ROTATION" Config.h || echo "     PEC_STEPS_PER_WORM_ROTATION : not defined"
+    #    grep "^#define PINMAP" Config.h || echo "     PINMAP: not defined"
+    #    grep "^#define STATUS_LED" Config.h || echo "     STATUS_LED: not defined"
+    #    grep "^#define AXIS1_DRIVER_MODEL" Config.h || echo "     AXIS1_DRIVER_MODEL: not defined"
+    #    grep "^#define AXIS2_DRIVER_MODEL" Config.h || echo "     AXIS2_DRIVER_MODEL: not defined"
+    #    grep "^#define AXIS1_STEPS_PER_DEGREE" Config.h || echo "     AXIS1_STEPS_PER_DEGREE: not defined"
+    #    grep "^#define AXIS2_STEPS_PER_DEGREE" Config.h || echo "     AXIS2_STEPS_PER_DEGREE: not defined"
+    #    grep "^#define AXIS1_DRIVER_MICROSTEPS" Config.h || echo "     AXIS1_DRIVER_MICROSTEPS: not defined"
+    #    grep "^#define AXIS2_DRIVER_MICROSTEPS" Config.h || echo "     AXIS2_DRIVER_MICROSTEPS: not defined"
+    #    grep "^#define AXIS1_DRIVER_REVERSE" Config.h || echo "     AXIS1_DRIVER_REVERSE : not defined"
+    #    grep "^#define AXIS2_DRIVER_REVERSE" Config.h || echo "     AXIS2_DRIVER_REVERSE : not defined"
+    #    grep "^#define MOUNT_TYPE" Config.h || echo "     MOUNT_TYPE : not defined"
+    #    grep "^#define PEC_STEPS_PER_WORM_ROTATION" Config.h || echo "     PEC_STEPS_PER_WORM_ROTATION : not defined"
   
-        sed -i "s/^#define[[:space:]]\+HOST_NAME[[:space:]]\+.*$/#define HOST_NAME OnStepX/" Config.h
-        grep "^#define HOST_NAME[[:space:]]" Config.h || echo "     HOST_NAME : not defined"
+    #    sed -i "s/^#define[[:space:]]\+HOST_NAME[[:space:]]\+.*$/#define HOST_NAME OnStepX/" Config.h
+    #    grep "^#define HOST_NAME[[:space:]]" Config.h || echo "     HOST_NAME : not defined"
    
-        sed -i "s/^#define[[:space:]]\+SERIAL_B_BAUD_DEFAULT[[:space:]]\+.*$/#define SERIAL_B_BAUD_DEFAULT OFF/" Config.h
-        grep "^#define SERIAL_B_BAUD_DEFAULT[[:space:]]" Config.h || echo "     Serial B Baud Default : not defined"
+    #    sed -i "s/^#define[[:space:]]\+SERIAL_B_BAUD_DEFAULT[[:space:]]\+.*$/#define SERIAL_B_BAUD_DEFAULT OFF/" Config.h
+    #    grep "^#define SERIAL_B_BAUD_DEFAULT[[:space:]]" Config.h || echo "     Serial B Baud Default : not defined"
 
-        sed -i "s/^#define[[:space:]]\+AXIS1_DRIVER_MODEL[[:space:]]\+.*$/#define AXIS1_DRIVER_MODEL ${{ github.event.inputs.driver_model }}/" Config.h
-        grep "^#define AXIS1_DRIVER_MODEL[[:space:]]" Config.h || echo "     AXIS1_DRIVER_MODEL : not defined"
-        sed -i "s/^#define[[:space:]]\+AXIS2_DRIVER_MODEL[[:space:]]\+.*$/#define AXIS2_DRIVER_MODEL ${{ github.event.inputs.driver_model }}/" Config.h
-        grep "^#define AXIS2_DRIVER_MODEL[[:space:]]" Config.h || echo "     AXIS2_DRIVER_MODEL : not defined"
+    #    sed -i "s/^#define[[:space:]]\+AXIS1_DRIVER_MODEL[[:space:]]\+.*$/#define AXIS1_DRIVER_MODEL ${{ github.event.inputs.driver_model }}/" Config.h
+    #    grep "^#define AXIS1_DRIVER_MODEL[[:space:]]" Config.h || echo "     AXIS1_DRIVER_MODEL : not defined"
+    #    sed -i "s/^#define[[:space:]]\+AXIS2_DRIVER_MODEL[[:space:]]\+.*$/#define AXIS2_DRIVER_MODEL ${{ github.event.inputs.driver_model }}/" Config.h
+    #    grep "^#define AXIS2_DRIVER_MODEL[[:space:]]" Config.h || echo "     AXIS2_DRIVER_MODEL : not defined"
         
-        temp_var=$(( 
+    #    temp_var=$(( 
+    #        ${{ github.event.inputs.stepper_steps }} *
+    #        ${{ github.event.inputs.micro_steps }} *
+    #        ${{ github.event.inputs.gear_reduction_ratio }} *
+    #        ${{ github.event.inputs.final_reduction }} / 360
+    #    ))
+    #    sed -i "s/^#define[[:space:]]\+AXIS1_STEPS_PER_DEGREE[[:space:]]\+.*$/#define AXIS1_STEPS_PER_DEGREE $temp_var/" Config.h
+    #    grep "^#define AXIS1_STEPS_PER_DEGREE[[:space:]]" Config.h || echo "     AXIS1_STEPS_PER_DEGREE : not defined"
+    #    sed -i "s/^#define[[:space:]]\+AXIS2_STEPS_PER_DEGREE[[:space:]]\+.*$/#define AXIS2_STEPS_PER_DEGREE $temp_var/" Config.h
+    #    grep "^#define AXIS2_STEPS_PER_DEGREE[[:space:]]" Config.h || echo "     AXIS2_STEPS_PER_DEGREE : not defined"
+        
+    #    sed -i "s/^#define[[:space:]]\+AXIS1_DRIVER_MICROSTEPS[[:space:]]\+.*$/#define AXIS1_DRIVER_MICROSTEPS ${{ github.event.inputs.micro_steps }}/" Config.h
+    #    grep "^#define AXIS1_DRIVER_MICROSTEPS[[:space:]]" Config.h || echo "     AXIS1_DRIVER_MICROSTEPS : not defined"
+    #    sed -i "s/^#define[[:space:]]\+AXIS2_DRIVER_MICROSTEPS[[:space:]]\+.*$/#define AXIS2_DRIVER_MICROSTEPS ${{ github.event.inputs.micro_steps }}/" Config.h
+    #    grep "^#define AXIS2_DRIVER_MICROSTEPS[[:space:]]" Config.h || echo "     AXIS2_DRIVER_MICROSTEPS : not defined"
+
+    #    temp_var=$(( 
+    #        ${{ github.event.inputs.stepper_steps }} *
+    #        ${{ github.event.inputs.micro_steps }} *
+    #        ${{ github.event.inputs.gear_reduction_ratio }}
+    #    ))
+    #    sed -i "s/^#define[[:space:]]\+PEC_STEPS_PER_WORM_ROTATION[[:space:]]\+.*$/#define PEC_STEPS_PER_WORM_ROTATION $temp_var/" Config.h
+    #    grep "^#define PEC_STEPS_PER_WORM_ROTATION[[:space:]]" Config.h || echo "     PEC_STEPS_PER_WORM_ROTATION : not defined"
+
+    # ------------------------------------------------------------
+    # Apply config settings to staged Config.h
+    # ------------------------------------------------------------
+    - name: Apply config settings to staged Config.h
+      run: |
+        CONFIG_FILE="src/Config.h"
+        echo "Patching $CONFIG_FILE"
+
+        # Basic checks
+        grep "^#define PINMAP" $CONFIG_FILE || echo "PINMAP: not defined"
+        grep "^#define STATUS_LED" $CONFIG_FILE || echo "STATUS_LED: not defined"
+        grep "^#define AXIS1_DRIVER_MODEL" $CONFIG_FILE || echo "AXIS1_DRIVER_MODEL: not defined"
+        grep "^#define AXIS2_DRIVER_MODEL" $CONFIG_FILE || echo "AXIS2_DRIVER_MODEL: not defined"
+
+        # Set HOST_NAME
+        sed -i "s/^#define[[:space:]]\+HOST_NAME[[:space:]]\+.*$/#define HOST_NAME OnStepX/" $CONFIG_FILE
+        grep "^#define HOST_NAME" $CONFIG_FILE || echo "HOST_NAME: not defined"
+
+        # Ensure SERIAL_B macros exist
+        grep -q '^#define SERIAL_B' $CONFIG_FILE || echo '#define SERIAL_B 1' >> $CONFIG_FILE
+        grep -q '^#define SERIAL_B_BAUD_DEFAULT' $CONFIG_FILE || echo '#define SERIAL_B_BAUD_DEFAULT OFF' >> $CONFIG_FILE
+
+        # Set driver model
+        sed -i "s/^#define[[:space:]]\+AXIS1_DRIVER_MODEL[[:space:]]\+.*$/#define AXIS1_DRIVER_MODEL ${{ github.event.inputs.driver_model }}/" $CONFIG_FILE
+        sed -i "s/^#define[[:space:]]\+AXIS2_DRIVER_MODEL[[:space:]]\+.*$/#define AXIS2_DRIVER_MODEL ${{ github.event.inputs.driver_model }}/" $CONFIG_FILE
+
+        # Compute steps per degree
+        STEPS_PER_DEGREE=$(( 
             ${{ github.event.inputs.stepper_steps }} *
             ${{ github.event.inputs.micro_steps }} *
             ${{ github.event.inputs.gear_reduction_ratio }} *
             ${{ github.event.inputs.final_reduction }} / 360
         ))
-        sed -i "s/^#define[[:space:]]\+AXIS1_STEPS_PER_DEGREE[[:space:]]\+.*$/#define AXIS1_STEPS_PER_DEGREE $temp_var/" Config.h
-        grep "^#define AXIS1_STEPS_PER_DEGREE[[:space:]]" Config.h || echo "     AXIS1_STEPS_PER_DEGREE : not defined"
-        sed -i "s/^#define[[:space:]]\+AXIS2_STEPS_PER_DEGREE[[:space:]]\+.*$/#define AXIS2_STEPS_PER_DEGREE $temp_var/" Config.h
-        grep "^#define AXIS2_STEPS_PER_DEGREE[[:space:]]" Config.h || echo "     AXIS2_STEPS_PER_DEGREE : not defined"
-        
-        sed -i "s/^#define[[:space:]]\+AXIS1_DRIVER_MICROSTEPS[[:space:]]\+.*$/#define AXIS1_DRIVER_MICROSTEPS ${{ github.event.inputs.micro_steps }}/" Config.h
-        grep "^#define AXIS1_DRIVER_MICROSTEPS[[:space:]]" Config.h || echo "     AXIS1_DRIVER_MICROSTEPS : not defined"
-        sed -i "s/^#define[[:space:]]\+AXIS2_DRIVER_MICROSTEPS[[:space:]]\+.*$/#define AXIS2_DRIVER_MICROSTEPS ${{ github.event.inputs.micro_steps }}/" Config.h
-        grep "^#define AXIS2_DRIVER_MICROSTEPS[[:space:]]" Config.h || echo "     AXIS2_DRIVER_MICROSTEPS : not defined"
+        sed -i "s/^#define[[:space:]]\+AXIS1_STEPS_PER_DEGREE[[:space:]]\+.*$/#define AXIS1_STEPS_PER_DEGREE $STEPS_PER_DEGREE/" $CONFIG_FILE
+        sed -i "s/^#define[[:space:]]\+AXIS2_STEPS_PER_DEGREE[[:space:]]\+.*$/#define AXIS2_STEPS_PER_DEGREE $STEPS_PER_DEGREE/" $CONFIG_FILE
 
-        temp_var=$(( 
+        # Set microsteps
+        sed -i "s/^#define[[:space:]]\+AXIS1_DRIVER_MICROSTEPS[[:space:]]\+.*$/#define AXIS1_DRIVER_MICROSTEPS ${{ github.event.inputs.micro_steps }}/" $CONFIG_FILE
+        sed -i "s/^#define[[:space:]]\+AXIS2_DRIVER_MICROSTEPS[[:space:]]\+.*$/#define AXIS2_DRIVER_MICROSTEPS ${{ github.event.inputs.micro_steps }}/" $CONFIG_FILE
+
+        # PEC steps per worm rotation
+        PEC_STEPS=$(( 
             ${{ github.event.inputs.stepper_steps }} *
             ${{ github.event.inputs.micro_steps }} *
             ${{ github.event.inputs.gear_reduction_ratio }}
         ))
-        sed -i "s/^#define[[:space:]]\+PEC_STEPS_PER_WORM_ROTATION[[:space:]]\+.*$/#define PEC_STEPS_PER_WORM_ROTATION $temp_var/" Config.h
-        grep "^#define PEC_STEPS_PER_WORM_ROTATION[[:space:]]" Config.h || echo "     PEC_STEPS_PER_WORM_ROTATION : not defined"
+        sed -i "s/^#define[[:space:]]\+PEC_STEPS_PER_WORM_ROTATION[[:space:]]\+.*$/#define PEC_STEPS_PER_WORM_ROTATION $PEC_STEPS/" $CONFIG_FILE
+
+        echo "Patched $CONFIG_FILE successfully"
 
         echo "Check folder structure of ."
         cd .
@@ -256,9 +360,9 @@ jobs:
         ls -la
         cd ..
         
-        # Replace Config.h in staged source
-        echo "Replacing config.h"
-        cp Config.h src/Config.h
+        ## Replace Config.h in staged source
+        #echo "Replacing config.h"
+        #cp Config.h src/Config.h
         ## cp Extended.config.h src/Extended.config.h 2>/dev/null || true
 
         # Ensure SERIAL_B macros exist
