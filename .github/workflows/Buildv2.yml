@@ -1,4 +1,4 @@
-name: Build OnStepX for FYSETC E4 (Complete)
+name: Build OnStepX v2
 
 on:
   workflow_dispatch:
