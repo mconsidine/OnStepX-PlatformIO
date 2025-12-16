@@ -12,20 +12,36 @@ on:
         - release-v10.20a
         - release-v10.24c
         - main-head
-        - e4-head'
+        - e4-head
         - main-head+e4-overlay
+        
       pin_map:
         description: 'Pin map'
         required: true
         default: FYSETC-E4
         options:
+        - BTT_SKR_PRO
         - FYSETC-E4
+        - MaxESP4
+        - MaxPCB4
+        - MaxSTM3
+        - MiniPCB
+        - MiniPCB2
+        
       driver_model:
         description: 'Motor driver model'
         required: true
         default: TMC2209
         options: 
+        - A4988
+        - DRV8825
+        - LV8729
+        - S109
+        - TMC2130
+        - TMC5160
         - TMC2209
+        - TMC2226
+        
       stepper_steps:
         description: 'Stepper motor steps'
         required: true
@@ -33,6 +49,7 @@ on:
         options:
         - 200
         - 400
+        
       micro_steps:
         description: 'Microsteps'
         required: true
@@ -41,6 +58,7 @@ on:
         - 16
         - 32
         - 64
+        
       gear_reduction_ratio:
         description: 'Reduction from motor to worm'
         required: true
@@ -50,13 +68,12 @@ on:
         - 3
         - 4
         - 5
+        
       final_reduction:
         description: 'Teeth in worm gear'
         required: true
         default: 144
-        options:
-        - 144
-        - 360
+        options: [144, 360]
         
 jobs:
   build:
@@ -152,6 +169,30 @@ jobs:
    
         sed -i "s/^#define[[:space:]]\+SERIAL_B_BAUD_DEFAULT[[:space:]]\+.*$/#define SERIAL_B_BAUD_DEFAULT OFF/" Config.h
         grep "^#define SERIAL_B_BAUD_DEFAULT[[:space:]]" Config.h || echo "     Serial B Baud Default : not defined"
+        
+        temp_var=$(( 
+            ${{ github.event.inputs.stepper_steps }} *
+            ${{ github.event.inputs.micro_steps }} *
+            ${{ github.event.inputs.gear_reduction_ratio }} *
+            ${{ github.event.inputs.final_reduction }} / 360
+        ))
+        sed -i "s/^#define[[:space:]]\+AXIS1_STEPS_PER_DEGREE[[:space:]]\+.*$/#define AXIS1_STEPS_PER_DEGREE $temp_var/" Config.h
+        grep "^#define AXIS1_STEPS_PER_DEGREE[[:space:]]" Config.h || echo "     AXIS1_STEPS_PER_DEGREE : not defined"
+        sed -i "s/^#define[[:space:]]\+AXIS2_STEPS_PER_DEGREE[[:space:]]\+.*$/#define AXIS2_STEPS_PER_DEGREE $temp_var/" Config.h
+        grep "^#define AXIS2_STEPS_PER_DEGREE[[:space:]]" Config.h || echo "     AXIS2_STEPS_PER_DEGREE : not defined"
+        
+        sed -i "s/^#define[[:space:]]\+AXIS1_DRIVER_MICROSTEPS[[:space:]]\+.*$/#define AXIS1_DRIVER_MICROSTEPS ${{ github.event.inputs.micro_steps }}/" Config.h
+        grep "^#define AXIS1_DRIVER_MICROSTEPS[[:space:]]" Config.h || echo "     AXIS1_DRIVER_MICROSTEPS : not defined"
+        sed -i "s/^#define[[:space:]]\+AXIS2_DRIVER_MICROSTEPS[[:space:]]\+.*$/#define AXIS2_DRIVER_MICROSTEPS ${{ github.event.inputs.micro_steps }}/" Config.h
+        grep "^#define AXIS2_DRIVER_MICROSTEPS[[:space:]]" Config.h || echo "     AXIS2_DRIVER_MICROSTEPS : not defined"
+
+        temp_var=$(( 
+            ${{ github.event.inputs.stepper_steps }} *
+            ${{ github.event.inputs.micro_steps }} *
+            ${{ github.event.inputs.gear_reduction_ratio }}
+        ))
+        sed -i "s/^#define[[:space:]]\+PEC_STEPS_PER_WORM_ROTATION[[:space:]]\+.*$/#define PEC_STEPS_PER_WORM_ROTATION $temp_var/" Config.h
+        grep "^#define PEC_STEPS_PER_WORM_ROTATION[[:space:]]" Config.h || echo "     PEC_STEPS_PER_WORM_ROTATION : not defined"
 
     # ------------------------------------------------------------
     # Build with PlatformIO
