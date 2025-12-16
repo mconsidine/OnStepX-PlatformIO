@@ -69,6 +69,16 @@ jobs:
         # Config files (if present)
         cp onstepx-src/Config.h . 2>/dev/null || true
         cp onstepx-src/Extended.config.h . 2>/dev/null || true
+        
+    # ------
+    # Apply Config settings to primary OnStepX
+    # ------
+    - name: Apply config settings to src
+      run: |
+        echo "Applying Config.h patches"
+        
+        sed -i "s/^#define[[:space:]]\+SERIAL_B_BAUD_DEFAULT[[:space:]]\+.*$/#define SERIAL_B_BAUD_DEFAULT OFF/" Config.h
+        grep "^#define SERIAL_B_BAUD_DEFAULT[[:space:]]" Config.h || echo "     Serial B Baud Default : not defined"
 
     # ------------------------------------------------------------
     # Apply E4 overlay (config + plugins only)
