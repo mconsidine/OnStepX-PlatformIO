@@ -1,17 +1,19 @@
-name: Build OnStepX v2
+name: Build OnStepX (vendored)
 
 on:
   workflow_dispatch:
     inputs:
-      build_mode:
-        description: 'Build mode'
+      build_target:
+        description: 'Source to build'
         required: true
-        default: 'main-release'
-        options:
-          - main-release
-          - e4-release
-          - main-head
-          - main-head+e4-config
+        default: main-head
+        options: [
+          'release-v10.18c',
+          'release-v10.20a',
+          'release-v10.24c',
+          'main-head',
+          'e4-head',
+          'main-head+e4-overlay']
 
 jobs:
   build:
@@ -19,75 +21,71 @@ jobs:
 
     steps:
     # ------------------------------------------------------------
-    # Checkout MAIN repo (always required)
+    # Checkout *your* build project
     # ------------------------------------------------------------
-    - name: Checkout OnStepX
+    - name: Checkout build harness
       uses: actions/checkout@v4
-      with:
-        repository: hjd1964/OnStepX
-        fetch-depth: 0
-        submodules: recursive
 
     # ------------------------------------------------------------
-    # Select branch or release
+    # Fetch OnStepX sources into temp directory
     # ------------------------------------------------------------
-    - name: Select build source
+    - name: Fetch OnStepX sources
       run: |
-        case "${{ github.event.inputs.build_mode }}" in
-          main-release)
-            git checkout $(git describe --tags --abbrev=0)
-            ;;
-          main-head)
-            git checkout main
-            ;;
-          e4-release)
-            git checkout E4
-            ;;
-          main-head+e4-config)
-            git checkout main
-            ;;
+        case "${{ github.event.inputs.build_target }}" in
+          release-v10.18c) REF=v10.18c ;;
+          release-v10.20a) REF=v10.20a ;;
+          release-v10.24c) REF=v10.24c ;;
+          main-head)       REF=main ;;
+          e4-head)         REF=E4 ;;
+          main-head+e4-overlay) REF=main ;;
         esac
 
-        echo "SOURCE_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
+        echo "Using OnStepX ref: $REF"
+
+        git clone --depth 1 --branch "$REF" \
+          https://github.com/hjd1964/OnStepX.git onstepx-src
 
     # ------------------------------------------------------------
-    # Checkout E4 for config/plugins only (conditional)
+    # Optional E4 overlay fetch
     # ------------------------------------------------------------
-    - name: Checkout E4 (config/plugins only)
-      if: github.event.inputs.build_mode == 'main-head+e4-config'
-      uses: actions/checkout@v4
-      with:
-        repository: hjd1964/OnStepX
-        ref: E4
-        fetch-depth: 0
-        path: e4-overlay
-
-    # ------------------------------------------------------------
-    # Apply E4 Config.h + plugins ONLY
-    # ------------------------------------------------------------
-    - name: Apply E4 Config and plugins
-      if: github.event.inputs.build_mode == 'main-head+e4-config'
+    - name: Fetch E4 overlay
+      if: github.event.inputs.build_target == 'main-head+e4-overlay'
       run: |
-        echo "Applying E4 Config.h and plugins to main HEAD"
+        git clone --depth 1 --branch E4 \
+          https://github.com/hjd1964/OnStepX.git onstepx-e4
 
-        # Replace Config.h
-        cp e4-overlay/Config.h Config.h
+    # ------------------------------------------------------------
+    # Stage sources into PlatformIO project
+    # ------------------------------------------------------------
+    - name: Stage OnStepX sources
+      run: |
+        echo "Staging OnStepX source tree"
 
-        # Replace plugins ONLY
+        rm -rf src
+        mkdir -p src
+
+        cp -a onstepx-src/src/. src/
+
+        # Config files (if present)
+        cp onstepx-src/Config.h . 2>/dev/null || true
+        cp onstepx-src/Extended.config.h . 2>/dev/null || true
+
+    # ------------------------------------------------------------
+    # Apply E4 overlay (config + plugins only)
+    # ------------------------------------------------------------
+    - name: Apply E4 overlay
+      if: github.event.inputs.build_target == 'main-head+e4-overlay'
+      run: |
+        echo "Applying E4 overlay"
+
+        cp onstepx-e4/Config.h . 2>/dev/null || true
+        cp onstepx-e4/Extended.config.h . 2>/dev/null || true
+
         rm -rf src/plugins
-        cp -a e4-overlay/src/plugins src/
+        cp -a onstepx-e4/src/plugins src/
 
     # ------------------------------------------------------------
-    # Sanity checks
-    # ------------------------------------------------------------
-    - name: Verify PlatformIO source tree
-      run: |
-        test -f platformio.ini || exit 1
-        test -d src || exit 1
-        find src -name "*.cpp" | grep -q . || exit 1
-
-    # ------------------------------------------------------------
-    # PlatformIO build
+    # Build with PlatformIO
     # ------------------------------------------------------------
     - name: Install PlatformIO
       run: pip install platformio
@@ -96,28 +94,20 @@ jobs:
       run: pio run -e esp32dev
 
     # ------------------------------------------------------------
-    # Firmware info
-    # ------------------------------------------------------------
-    - name: Create firmware-info.txt
-      run: |
-        {
-          echo "OnStepX Firmware"
-          echo "================"
-          echo ""
-          echo "Build Mode: ${{ github.event.inputs.build_mode }}"
-          echo "Source SHA: $SOURCE_SHA"
-          echo "Build Date: $(date -u)"
-        } > firmware-info.txt
-
-    # ------------------------------------------------------------
     # Upload artifacts
     # ------------------------------------------------------------
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: onstepx-${{ github.event.inputs.build_mode }}
+        name: onstepx-${{ github.event.inputs.build_target }}
         path: |
-          .pio/build/esp32dev/firmware.bin
-          .pio/build/esp32dev/firmware.elf
-          firmware-info.txt
+          .pio/build/**/firmware.*
         retention-days: 30
+
+    # ------------------------------------------------------------
+    # Cleanup vendored sources
+    # ------------------------------------------------------------
+    - name: Cleanup
+      if: always()
+      run: |
+        rm -rf onstepx-src onstepx-e4 src Config.h Extended.config.h
