@@ -214,10 +214,9 @@ jobs:
         sed -i "s/^#define[[:space:]]\+SERIAL_B_BAUD_DEFAULT[[:space:]]\+.*$/#define SERIAL_B_BAUD_DEFAULT OFF/" Config.h
         grep "^#define SERIAL_B_BAUD_DEFAULT[[:space:]]" Config.h || echo "     Serial B Baud Default : not defined"
 
-        temp_var=$(( ${{ github.event.inputs.driver_model }} ))
-        sed -i "s/^#define[[:space:]]\+AXIS1_DRIVER_MODEL[[:space:]]\+.*$/#define AXIS1_DRIVER_MODEL github.event.inputs.driver_model/" Config.h
+        sed -i "s/^#define[[:space:]]\+AXIS1_DRIVER_MODEL[[:space:]]\+.*$/#define AXIS1_DRIVER_MODEL ${{ github.event.inputs.driver_model }}/" Config.h
         grep "^#define AXIS1_DRIVER_MODEL[[:space:]]" Config.h || echo "     AXIS1_DRIVER_MODEL : not defined"
-        sed -i "s/^#define[[:space:]]\+AXIS2_DRIVER_MODEL[[:space:]]\+.*$/#define AXIS2_DRIVER_MODEL github.event.inputs.driver_model/" Config.h
+        sed -i "s/^#define[[:space:]]\+AXIS2_DRIVER_MODEL[[:space:]]\+.*$/#define AXIS2_DRIVER_MODEL ${{ github.event.inputs.driver_model }}/" Config.h
         grep "^#define AXIS2_DRIVER_MODEL[[:space:]]" Config.h || echo "     AXIS2_DRIVER_MODEL : not defined"
         
         temp_var=$(( 
@@ -243,17 +242,14 @@ jobs:
         ))
         sed -i "s/^#define[[:space:]]\+PEC_STEPS_PER_WORM_ROTATION[[:space:]]\+.*$/#define PEC_STEPS_PER_WORM_ROTATION $temp_var/" Config.h
         grep "^#define PEC_STEPS_PER_WORM_ROTATION[[:space:]]" Config.h || echo "     PEC_STEPS_PER_WORM_ROTATION : not defined"
-
-        echo "Current folder structure:"
-        ls -la
-        echo "-----------"
-        
+  
         # Replace Config.h in staged source
-        # cp Config.h onstepx-src/src/Config.h
+        cp Config.h src/Config.h
+        ## cp Extended.config.h src/Extended.config.h 2>/dev/null || true
 
         # Ensure SERIAL_B macros exist
-        grep -q '^#define SERIAL_B' onstepx-src/src/Config.h || echo '#define SERIAL_B 1' >> onstepx-src/src/Config.h
-        grep -q '^#define SERIAL_B_BAUD_DEFAULT' onstepx-src/src/Config.h || echo '#define SERIAL_B_BAUD_DEFAULT 9600' >> onstepx-src/src/Config.h
+        ## grep -q '^#define SERIAL_B' src/Config.h || echo '#define SERIAL_B 1' >> src/Config.h
+        ## grep -q '^#define SERIAL_B_BAUD_DEFAULT' src/Config.h || echo '#define SERIAL_B_BAUD_DEFAULT 9600' >> src/Config.h
 
     # ------------------------------------------------------------
     # Build with PlatformIO
@@ -262,11 +258,7 @@ jobs:
       run: pip install platformio
 
     - name: Build firmware
-      run: 
-        echo "Current folder structure before pio run:"
-        ls -la
-        echo "-----------"        
-        pio run -e esp32dev
+      run: pio run -e esp32dev
 
     # ------------------------------------------------------------
     # Upload artifacts
