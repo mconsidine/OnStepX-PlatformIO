@@ -147,10 +147,10 @@ jobs:
 
         # Clear old staged folder
         rm -rf src
-        mkdir -p src/src   # <-- nested 'src' for actual source files
+        mkdir -p src   # <-- nested 'src' for actual source files
 
         # Copy all OnStepX source files into src/src/
-        cp -a onstepx-src/src/. src/src/
+        cp -a onstepx-src/src/. src/
 
         # Copy top-level files (Config.h, Extended.config.h, *.ino) to src/
         cp onstepx-src/Config.h src/ 2>/dev/null || true
@@ -237,8 +237,8 @@ jobs:
         fi
 
         # Merge plugin folder into src/src/plugins/
-        mkdir -p src/src/plugins
-        rsync -av --ignore-existing onstepx-e4/src/plugins/ src/src/plugins/
+        mkdir -p src/plugins
+        rsync -av --ignore-existing onstepx-e4/src/plugins/ src/plugins/
     
     # ------
     # Apply Config settings
