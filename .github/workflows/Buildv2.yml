@@ -369,6 +369,14 @@ jobs:
         ## grep -q '^#define SERIAL_B' src/Config.h || echo '#define SERIAL_B 1' >> src/Config.h
         ## grep -q '^#define SERIAL_B_BAUD_DEFAULT' src/Config.h || echo '#define SERIAL_B_BAUD_DEFAULT 9600' >> src/Config.h
 
+    - name: Debug Config.h
+      run: |
+        echo "=== SERIAL_B related lines ==="
+        grep -i "SERIAL_B" staged/Config.h || echo "No SERIAL_B found"
+        echo ""
+        echo "=== Last 20 lines of Config.h ==="
+        tail -20 staged/Config.h
+    
     # ------------------------------------------------------------
     # Build with PlatformIO
     # ------------------------------------------------------------
