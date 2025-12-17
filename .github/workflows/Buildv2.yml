@@ -392,14 +392,79 @@ jobs:
     # ------------------------------------------------------------
     # Upload artifacts
     # ------------------------------------------------------------
-    - name: Upload artifacts
+    #- name: Upload artifacts
+    #  uses: actions/upload-artifact@v4
+    #  with:
+    #    name: onstepx-${{ github.event.inputs.build_target }}
+    #    path: |
+    #      .pio/build/**/firmware.*
+    #    retention-days: 30
+    
+    - name: Merge Final Binary
+      run: |
+        # Build environment and chip settings
+        BUILD_ENV="esp32dev"
+        CHIP="esp32"
+        FLASH_MODE="dio"
+        FLASH_FREQ="40m"
+    
+        # Determine flash size based on board/pin map
+        case "${{ github.event.inputs.pin_map }}" in
+          FYSETC-E4)
+            FLASH_SIZE="16MB"
+            ;;
+          MaxESP4)
+            FLASH_SIZE="16MB"
+            ;;
+          *)
+            FLASH_SIZE="4MB"
+            ;;
+        esac
+    
+        # Define paths
+        BUILD_DIR=".pio/build/${BUILD_ENV}"
+        FIRMWARE_BIN="${BUILD_DIR}/firmware.bin"
+        BOOTLOADER_BIN="${BUILD_DIR}/bootloader.bin"
+        PARTITIONS_BIN="${BUILD_DIR}/partitions.bin"
+        BOOT_APP0_BIN="${BUILD_DIR}/boot_app0.bin"
+    
+        # Verify all required files exist
+        for f in "$FIRMWARE_BIN" "$BOOTLOADER_BIN" "$PARTITIONS_BIN" "$BOOT_APP0_BIN"; do
+          if [ ! -f "$f" ]; then
+            echo "ERROR: Required file not found: $f"
+            exit 1
+          fi
+        done
+    
+        # Generate output filename with build details
+        OUTPUT_NAME="${{ github.event.inputs.pin_map }}_${{ github.event.inputs.build_target }}_${{ github.event.inputs.driver_model }}_firmware.bin"
+    
+        # Merge binaries
+        pio pkg exec --package "platformio/tool-esptoolpy@~1.40501.0" -- esptool.py \
+          --chip ${CHIP} merge_bin \
+          --flash_mode ${FLASH_MODE} \
+          --flash_freq ${FLASH_FREQ} \
+          --flash_size ${FLASH_SIZE} \
+          0x1000 "${BOOTLOADER_BIN}" \
+          0x8000 "${PARTITIONS_BIN}" \
+          0xe000 "${BOOT_APP0_BIN}" \
+          0x10000 "${FIRMWARE_BIN}" \
+          -o "${OUTPUT_NAME}"
+    
+        echo "Merged binary created: ${OUTPUT_NAME}"
+        echo "Flash size: ${FLASH_SIZE}"
+        echo ""
+        echo "To flash on Linux:"
+        echo "  esptool.py --port /dev/ttyUSB0 --baud 460800 write_flash 0x0 ${OUTPUT_NAME}"
+    
+        # Export for artifact upload step
+        echo "OUTPUT_NAME=${OUTPUT_NAME}" >> $GITHUB_ENV
+
+    - name: 📦 Upload Merged Binary Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: onstepx-${{ github.event.inputs.build_target }}
-        path: |
-          .pio/build/**/firmware.*
-        retention-days: 30
-
+        name: ${{ github.event.inputs.pin_map }}-${{ github.event.inputs.build_target }}-${{ github.event.inputs.driver_model }}
+        path: ${{ env.OUTPUT_NAME }}
     # ------------------------------------------------------------
     # Cleanup vendored sources
     # ------------------------------------------------------------
