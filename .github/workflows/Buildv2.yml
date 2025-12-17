@@ -204,41 +204,41 @@ jobs:
     #    mkdir -p src/plugins
     #    rsync -av --ignore-existing onstepx-e4/src/plugins/ src/plugins/
 
-# ------------------------------------------------------------
-# Apply E4 overlay (config + plugins only)
-# ------------------------------------------------------------
-- name: Apply E4 overlay
-  if: github.event.inputs.build_target == 'main-head+e4-overlay'
-  run: |
-    echo "Merging E4 overlay with main"
+    # ------------------------------------------------------------
+    # Apply E4 overlay (config + plugins only)
+    # ------------------------------------------------------------
+    - name: Apply E4 overlay
+      if: github.event.inputs.build_target == 'main-head+e4-overlay'
+      run: |
+        echo "Merging E4 overlay with main"
 
-    # Merge Config.h
-    cp onstepx-e4/Config.h src/Config-e4.h
-    cp src/Config.h src/Config-main.h
-    cp src/Config-e4.h src/Config.h
+        # Merge Config.h
+        cp onstepx-e4/Config.h src/Config-e4.h
+        cp src/Config.h src/Config-main.h
+        cp src/Config-e4.h src/Config.h
 
-    grep "^#define" src/Config-main.h | awk '{print $2}' | sort > main.txt
-    grep "^#define" src/Config-e4.h  | sort > e4.txt
-    comm -23 main.txt e4.txt > main-only.txt
+        grep "^#define" src/Config-main.h | awk '{print $2}' | sort > main.txt
+        grep "^#define" src/Config-e4.h  | sort > e4.txt
+        comm -23 main.txt e4.txt > main-only.txt
 
-    if [ -s main-only.txt ]; then
-      echo "" >> src/Config.h
-      echo "// ==== Added from main ====" >> src/Config.h
-      while read def; do
+        if [ -s main-only.txt ]; then
+          echo "" >> src/Config.h
+          echo "// ==== Added from main ====" >> src/Config.h
+          while read def; do
         awk "/^#define $def/{print}" src/Config-main.h >> src/Config.h
-      done < main-only.txt
-    fi
+          done < main-only.txt
+        fi
 
-    rm -f src/Config-e4.h src/Config-main.h main.txt e4.txt main-only.txt
+        rm -f src/Config-e4.h src/Config-main.h main.txt e4.txt main-only.txt
 
-    # Merge Extended.config.h if it exists
-    if [ -f onstepx-e4/Extended.config.h ]; then
-      cp onstepx-e4/Extended.config.h src/
-    fi
+        # Merge Extended.config.h if it exists
+        if [ -f onstepx-e4/Extended.config.h ]; then
+          cp onstepx-e4/Extended.config.h src/
+        fi
 
-    # Merge plugin folder into src/src/plugins/
-    mkdir -p src/src/plugins
-    rsync -av --ignore-existing onstepx-e4/src/plugins/ src/src/plugins/
+        # Merge plugin folder into src/src/plugins/
+        mkdir -p src/src/plugins
+        rsync -av --ignore-existing onstepx-e4/src/plugins/ src/src/plugins/
     
     # ------
     # Apply Config settings
