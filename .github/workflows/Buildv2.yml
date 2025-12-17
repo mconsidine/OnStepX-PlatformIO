@@ -411,7 +411,7 @@ jobs:
         # Determine flash size based on board/pin map
         case "${{ github.event.inputs.pin_map }}" in
           FYSETC-E4)
-            FLASH_SIZE="16MB"
+            FLASH_SIZE="4MB"
             ;;
           MaxESP4)
             FLASH_SIZE="16MB"
