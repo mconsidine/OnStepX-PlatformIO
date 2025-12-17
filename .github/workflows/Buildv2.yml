@@ -313,9 +313,12 @@ jobs:
         sed -i "s/^#define[[:space:]]\+HOST_NAME[[:space:]]\+.*$/#define HOST_NAME OnStepX/" $CONFIG_FILE
         grep "^#define HOST_NAME" $CONFIG_FILE || echo "HOST_NAME: not defined"
 
-        # Ensure SERIAL_B macros exist
-        grep -q '^#define SERIAL_B' $CONFIG_FILE || echo '#define SERIAL_B 1' >> $CONFIG_FILE
-        grep -q '^#define SERIAL_B_BAUD_DEFAULT' $CONFIG_FILE || echo '#define SERIAL_B_BAUD_DEFAULT OFF' >> $CONFIG_FILE
+        ### Ensure SERIAL_B macros exist
+        ## grep -q '^#define SERIAL_B' $CONFIG_FILE || echo '#define SERIAL_B 1' >> $CONFIG_FILE
+        ## grep -q '^#define SERIAL_B_BAUD_DEFAULT' $CONFIG_FILE || echo '#define SERIAL_B_BAUD_DEFAULT OFF' >> $CONFIG_FILE
+        # Set SERIAL_B_BAUD_DEFAULT to OFF (SERIAL_B is not defined for this board)
+        sed -i 's/^#define[[:space:]]\+SERIAL_B_BAUD_DEFAULT[[:space:]]\+[^/]*/#define SERIAL_B_BAUD_DEFAULT        OFF /' $CONFIG_FILE
+        grep "^#define SERIAL_B_BAUD_DEFAULT" $CONFIG_FILE
 
         # Set driver model
         sed -i "s/^#define[[:space:]]\+AXIS1_DRIVER_MODEL[[:space:]]\+.*$/#define AXIS1_DRIVER_MODEL ${{ github.event.inputs.driver_model }}/" $CONFIG_FILE
