@@ -146,16 +146,16 @@ jobs:
         echo "Staging OnStepX source tree"
 
         # Clear old staged folder
-        rm -rf src
-        mkdir -p src   # <-- nested 'src' for actual source files
+        rm -rf staged
+        mkdir -p staged
 
         # Copy all OnStepX source files into src/src/
-        cp -a onstepx-src/src/. src/
+        cp -a onstepx-src/src/ staged/
 
         # Copy top-level files (Config.h, Extended.config.h, *.ino) to src/
-        cp onstepx-src/Config.h src/ 2>/dev/null || true
-        cp onstepx-src/Extended.config.h src/ 2>/dev/null || true
-        cp onstepx-src/*.ino src/ 2>/dev/null || true
+        cp onstepx-src/Config.h staged/ 2>/dev/null || true
+        cp onstepx-src/Extended.config.h staged/ 2>/dev/null || true
+        cp onstepx-src/*.ino staged/ 2>/dev/null || true
         
     # ------------------------------------------------------------
     # Apply E4 overlay (config + plugins only)
@@ -213,32 +213,32 @@ jobs:
         echo "Merging E4 overlay with main"
 
         # Merge Config.h
-        cp onstepx-e4/Config.h src/Config-e4.h
-        cp src/Config.h src/Config-main.h
-        cp src/Config-e4.h src/Config.h
+        cp onstepx-e4/Config.h staged/Config-e4.h
+        cp staged/Config.h staged/Config-main.h
+        cp staged/Config-e4.h staged/Config.h
 
-        grep "^#define" src/Config-main.h | awk '{print $2}' | sort > main.txt
-        grep "^#define" src/Config-e4.h  | sort > e4.txt
+        grep "^#define" staged/Config-main.h | awk '{print $2}' | sort > main.txt
+        grep "^#define" staged/Config-e4.h  | sort > e4.txt
         comm -23 main.txt e4.txt > main-only.txt
 
         if [ -s main-only.txt ]; then
-          echo "" >> src/Config.h
-          echo "// ==== Added from main ====" >> src/Config.h
+          echo "" >> staged/Config.h
+          echo "// ==== Added from main ====" >> staged/Config.h
           while read def; do
-        awk "/^#define $def/{print}" src/Config-main.h >> src/Config.h
+        awk "/^#define $def/{print}" staged/Config-main.h >> staged/Config.h
           done < main-only.txt
         fi
 
-        rm -f src/Config-e4.h src/Config-main.h main.txt e4.txt main-only.txt
+        rm -f staged/Config-e4.h staged/Config-main.h main.txt e4.txt main-only.txt
 
         # Merge Extended.config.h if it exists
         if [ -f onstepx-e4/Extended.config.h ]; then
-          cp onstepx-e4/Extended.config.h src/
+          cp onstepx-e4/Extended.config.h staged/
         fi
 
         # Merge plugin folder into src/src/plugins/
-        mkdir -p src/plugins
-        rsync -av --ignore-existing onstepx-e4/src/plugins/ src/plugins/
+        mkdir -p staged/src/plugins
+        rsync -av --ignore-existing onstepx-e4/src/plugins/ staged/src/plugins/
     
     # ------
     # Apply Config settings
@@ -300,7 +300,7 @@ jobs:
     # ------------------------------------------------------------
     - name: Apply config settings to staged Config.h
       run: |
-        CONFIG_FILE="src/Config.h"
+        CONFIG_FILE="staged/Config.h"
         echo "Patching $CONFIG_FILE"
 
         # Basic checks
@@ -351,7 +351,7 @@ jobs:
         cd .
         
         echo "Check folder structure of src"
-        cd src
+        cd staged
         ls -la
         cd ..
         
@@ -395,4 +395,4 @@ jobs:
     - name: Cleanup
       if: always()
       run: |
-        rm -rf onstepx-src onstepx-e4 src Config.h Extended.config.h
+        rm -rf onstepx-src onstepx-e4 staged
