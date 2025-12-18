@@ -310,7 +310,7 @@ jobs:
         grep "^#define AXIS2_DRIVER_MODEL" $CONFIG_FILE || echo "AXIS2_DRIVER_MODEL: not defined"
 
         # Set HOST_NAME
-        sed -i "s/^#define[[:space:]]\+HOST_NAME[[:space:]]\+.*$/#define HOST_NAME 'OnStepX'/" $CONFIG_FILE
+        sed -i "s/^#define[[:space:]]\+HOST_NAME[[:space:]]\+.*$/#define HOST_NAME \"OnStepX\"/" $CONFIG_FILE
         grep "^#define HOST_NAME" $CONFIG_FILE || echo "HOST_NAME: not defined"
 
         ### Ensure SERIAL_B macros exist
