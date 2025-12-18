@@ -127,6 +127,7 @@ jobs:
     - name: Fetch overlay
       if: github.event.inputs.overlay_target == 'e4'
       run: |
+        echo "Overlay target is e4"
         git clone --depth 1 --branch E4 \
           https://github.com/hjd1964/OnStepX.git onstepx-overlay
 
