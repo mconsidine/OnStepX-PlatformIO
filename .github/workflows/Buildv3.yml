@@ -1,4 +1,4 @@
-name: Build OnStepX (vendored)
+name: Build OnStepX (v3)
 
 on:
   workflow_dispatch:
