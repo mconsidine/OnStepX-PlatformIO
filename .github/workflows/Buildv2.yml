@@ -503,7 +503,11 @@ jobs:
           0xe000 "${BOOT_APP0_BIN}" \
           0x10000 "${FIRMWARE_BIN}" \
           -o "${OUTPUT_NAME}"
-    
+
+        echo "Files :"
+        ls -lha
+        echo "----------\"
+        
         echo "Merged binary created: ${OUTPUT_NAME}"
         echo "Flash size: ${FLASH_SIZE}"
         echo ""
