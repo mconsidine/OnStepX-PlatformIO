@@ -400,6 +400,12 @@ jobs:
     #      .pio/build/**/firmware.*
     #    retention-days: 30
     
+    - name: List build output files
+      run: |
+        echo "Build completed. Output files:"
+        cp ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin .pio/build/esp32dev/
+        ls -la .pio/build/esp32dev/ || echo "Build directory not found"
+  
     - name: Merge Final Binary
       run: |
         # Build environment and chip settings
