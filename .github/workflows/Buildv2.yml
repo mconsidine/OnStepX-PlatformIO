@@ -415,7 +415,22 @@ jobs:
         echo "Build completed. Output files:"
         cp ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin .pio/build/esp32dev/
         ls -la .pio/build/esp32dev/ || echo "Build directory not found"
-  
+
+    - name: Debug - Verify firmware contents
+      run: |
+        echo "=== Firmware files created ==="
+        ls -la .pio/build/esp32dev/firmware.*
+    
+        echo ""
+        echo "=== Firmware sizes ==="
+        stat --printf="firmware.bin: %s bytes\n" .pio/build/esp32dev/firmware.bin
+        stat --printf="firmware.elf: %s bytes\n" .pio/build/esp32dev/firmware.elf
+    
+        echo ""
+        echo "=== Symbols from OnStepX.ino (confirming it's linked) ==="
+        pio pkg exec --package "platformio/toolchain-xtensa-esp32" -- xtensa-esp32-elf-nm .pio/build/esp32dev/firmware.elf | grep -i setup || echo "setup() not found"
+        pio pkg exec --package "platformio/toolchain-xtensa-esp32" -- xtensa-esp32-elf-nm .pio/build/esp32dev/firmware.elf | grep -i loop || echo "loop() not found"
+    
     - name: Merge Final Binary
       run: |
         # Build environment and chip settings
