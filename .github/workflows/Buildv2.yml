@@ -347,31 +347,7 @@ jobs:
         sed -i "s/^#define[[:space:]]\+PEC_STEPS_PER_WORM_ROTATION[[:space:]]\+.*$/#define PEC_STEPS_PER_WORM_ROTATION $PEC_STEPS/" $CONFIG_FILE
 
         echo "Patched $CONFIG_FILE successfully"
-
-        echo "Check folder structure of ."
-        cd .
-        ls -la
-        cd .
         
-        echo "Check folder structure of src"
-        cd staged
-        ls -la
-        cd ..
-        
-        echo "Check folder structure of onstepx-src"
-        cd onstepx-src
-        ls -la
-        cd ..
-        
-        ## Replace Config.h in staged source
-        #echo "Replacing config.h"
-        #cp Config.h src/Config.h
-        ## cp Extended.config.h src/Extended.config.h 2>/dev/null || true
-
-        # Ensure SERIAL_B macros exist
-        ## grep -q '^#define SERIAL_B' src/Config.h || echo '#define SERIAL_B 1' >> src/Config.h
-        ## grep -q '^#define SERIAL_B_BAUD_DEFAULT' src/Config.h || echo '#define SERIAL_B_BAUD_DEFAULT 9600' >> src/Config.h
-
     - name: Debug Config.h
       run: |
         echo "=== SERIAL_B related lines ==="
@@ -387,7 +363,7 @@ jobs:
       run: pip install platformio
 
     - name: Build firmware
-      run: pio run -e esp32dev -v
+      run: pio run -e esp32dev
 
     - name: Debug - Check compiled objects
       if: always()
