@@ -435,6 +435,15 @@ jobs:
         else
           echo "nm tool not found, but firmware.bin exists so build succeeded"
         fi
+        
+    - name: Debug - Search for firmware constants
+      run: |
+        echo "=== Searching for 'firmware*' strings in binary ==="
+        strings .pio/build/esp32dev/firmware.bin | grep -i "^firmware" 
+    
+        echo ""
+        echo "=== Searching for any string containing 'firmware' ==="
+        strings .pio/build/esp32dev/firmware.bin | grep -i "firmware"
     
     - name: Merge Final Binary
       run: |
