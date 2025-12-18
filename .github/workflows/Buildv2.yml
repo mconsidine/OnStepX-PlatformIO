@@ -424,12 +424,17 @@ jobs:
         echo ""
         echo "=== Firmware sizes ==="
         stat --printf="firmware.bin: %s bytes\n" .pio/build/esp32dev/firmware.bin
-        stat --printf="firmware.elf: %s bytes\n" .pio/build/esp32dev/firmware.elf
     
         echo ""
         echo "=== Symbols from OnStepX.ino (confirming it's linked) ==="
-        pio pkg exec --package "platformio/toolchain-xtensa-esp32" -- xtensa-esp32-elf-nm .pio/build/esp32dev/firmware.elf | grep -i setup || echo "setup() not found"
-        pio pkg exec --package "platformio/toolchain-xtensa-esp32" -- xtensa-esp32-elf-nm .pio/build/esp32dev/firmware.elf | grep -i loop || echo "loop() not found"
+        # Find the correct toolchain path
+        NM_TOOL=$(find ~/.platformio/packages -name "xtensa-esp32-elf-nm" 2>/dev/null | head -1)
+        if [ -n "$NM_TOOL" ]; then
+          echo "Using: $NM_TOOL"
+          $NM_TOOL .pio/build/esp32dev/firmware.elf | grep -E "setup|loop" | head -10
+        else
+          echo "nm tool not found, but firmware.bin exists so build succeeded"
+        fi
     
     - name: Merge Final Binary
       run: |
