@@ -438,13 +438,21 @@ jobs:
         
     - name: Debug - Search for firmware constants
       run: |
-        echo "=== Searching for 'firmware*' strings in binary ==="
-        strings .pio/build/esp32dev/firmware.bin | grep -i "^firmware" 
+        echo "=== Search for FirmwareName string value ==="
+        strings .pio/build/esp32dev/firmware.bin | grep -i "On-Step"
     
         echo ""
-        echo "=== Searching for any string containing 'firmware' ==="
-        strings .pio/build/esp32dev/firmware.bin | grep -i "firmware"
+        echo "=== Search for OnStep variations ==="
+        strings .pio/build/esp32dev/firmware.bin | grep -iE "onstep|on-step"
     
+        echo ""
+        echo "=== Look for version strings (likely concatenated at runtime) ==="
+        strings .pio/build/esp32dev/firmware.bin | grep -E "10\.[0-9]+" | head -10
+    
+        echo ""
+        echo "=== All strings containing 'step' ==="
+        strings .pio/build/esp32dev/firmware.bin | grep -i "step" | head -20
+  
     - name: Merge Final Binary
       run: |
         # Build environment and chip settings
