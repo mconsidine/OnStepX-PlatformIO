@@ -234,6 +234,89 @@ jobs:
         # Merge plugin folder into src/src/plugins/
         mkdir -p staged/src/plugins
         rsync -av --ignore-existing onstepx-overlay/src/plugins/ staged/src/plugins/
+        
+    - name: Apply overlay
+      if: github.event.inputs.overlay_target == 'e4'
+      run: |
+        echo "Merging overlay with main (two-way merge)"
+
+        cp onstepx-overlay/Config.h staged/Config-overlay.h
+        cp staged/Config.h staged/Config-main.h
+
+        # Extract define names from both
+        grep "^#define" staged/Config-main.h | awk '{print $2}' | sort -u > main-defines.txt
+        grep "^#define" staged/Config-overlay.h | awk '{print $2}' | sort -u > overlay-defines.txt
+
+        # Find unique to each and common to both
+        comm -23 main-defines.txt overlay-defines.txt > main-only.txt      # In main, not in overlay
+        comm -13 main-defines.txt overlay-defines.txt > overlay-only.txt   # In overlay, not in main
+        comm -12 main-defines.txt overlay-defines.txt > common.txt         # In both
+
+        echo "=== Merge Summary ==="
+        echo "Defines only in main: $(wc -l < main-only.txt)"
+        echo "Defines only in overlay: $(wc -l < overlay-only.txt)"
+        echo "Defines in both (overlay value used): $(wc -l < common.txt)"
+
+        # Start fresh Config.h with header
+        echo "// =============================================" > staged/Config.h
+        echo "// Merged Config.h: main + overlay" >> staged/Config.h
+        echo "// Base: overlay (${{ github.event.inputs.overlay_target }})" >> staged/Config.h
+        echo "// Merged from: ${{ github.event.inputs.build_target }}" >> staged/Config.h
+        echo "// =============================================" >> staged/Config.h
+        echo "" >> staged/Config.h
+
+        # 1. Add all defines from overlay (these take precedence for common defines)
+        echo "// ==== From overlay ====" >> staged/Config.h
+        grep "^#define" staged/Config-overlay.h >> staged/Config.h
+        echo "" >> staged/Config.h
+
+        # 2. Add defines that only exist in main
+        if [ -s main-only.txt ]; then
+          echo "// ==== Unique defines from main ====" >> staged/Config.h
+          while read def; do
+            grep "^#define[[:space:]]\+${def}[[:space:]]" staged/Config-main.h >> staged/Config.h || \
+            grep "^#define[[:space:]]\+${def}$" staged/Config-main.h >> staged/Config.h || true
+          done < main-only.txt
+          echo "" >> staged/Config.h
+        fi
+
+        # 3. Optionally log conflicts (defines with different values)
+        echo ""
+        echo "=== Potential Conflicts (same define, different values) ==="
+        while read def; do
+          MAIN_VAL=$(grep "^#define[[:space:]]\+${def}[[:space:]]" staged/Config-main.h | head -1)
+          OVERLAY_VAL=$(grep "^#define[[:space:]]\+${def}[[:space:]]" staged/Config-overlay.h | head -1)
+          if [ "$MAIN_VAL" != "$OVERLAY_VAL" ]; then
+            echo "CONFLICT: $def"
+            echo "  main:    $MAIN_VAL"
+            echo "  overlay: $OVERLAY_VAL (USED)"
+          fi
+        done < common.txt
+
+        # Cleanup
+        rm -f staged/Config-overlay.h staged/Config-main.h
+        rm -f main-defines.txt overlay-defines.txt main-only.txt overlay-only.txt common.txt
+
+        # Merge Extended.config.h if it exists in overlay
+        if [ -f onstepx-overlay/Extended.config.h ]; then
+          cp onstepx-overlay/Extended.config.h staged/
+        fi
+
+        # Merge plugin folders (overlay takes precedence, then fill in from main)
+        mkdir -p staged/src/plugins
+    
+        # First copy overlay plugins
+        if [ -d onstepx-overlay/src/plugins ]; then
+          rsync -av onstepx-overlay/src/plugins/ staged/src/plugins/
+        fi
+    
+        # Then add any plugins from main that don't exist in overlay
+        if [ -d onstepx-src/src/plugins ]; then
+          rsync -av --ignore-existing onstepx-src/src/plugins/ staged/src/plugins/
+        fi
+
+        echo ""
+        echo "=== Merge complete ==="
     
     # ------
     # Apply Config settings
