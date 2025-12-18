@@ -387,7 +387,7 @@ jobs:
       run: pip install platformio
 
     - name: Build firmware
-      run: pio run -e esp32dev
+      run: pio run -e esp32dev -v
 
     # ------------------------------------------------------------
     # Upload artifacts
