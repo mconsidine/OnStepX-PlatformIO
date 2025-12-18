@@ -202,39 +202,7 @@ jobs:
     # ------------------------------------------------------------
     # Apply E4 overlay (config + plugins only)
     # ------------------------------------------------------------
-    - name: Apply overlay
-      if: github.event.inputs.overlay_target == 'e4'
-      run: |
-        echo "Merging overlay with main"
-
-        # Merge Config.h
-        cp onstepx-overlay/Config.h staged/Config-overlay.h
-        cp staged/Config.h staged/Config-main.h
-        cp staged/Config-overlay.h staged/Config.h
-
-        grep "^#define" staged/Config-main.h | awk '{print $2}' | sort > main.txt
-        grep "^#define" staged/Config-overlay.h  | sort > overlay.txt
-        comm -23 main.txt overlay.txt > main-only.txt
-
-        if [ -s main-only.txt ]; then
-          echo "" >> staged/Config.h
-          echo "// ==== Added from main ====" >> staged/Config.h
-          while read def; do
-        awk "/^#define $def/{print}" staged/Config-main.h >> staged/Config.h
-          done < main-only.txt
-        fi
-
-        rm -f staged/Config-overlay.h staged/Config-main.h main.txt overlay.txt main-only.txt
-
-        # Merge Extended.config.h if it exists
-        if [ -f onstepx-overlay/Extended.config.h ]; then
-          cp onstepx-overlay/Extended.config.h staged/
-        fi
-
-        # Merge plugin folder into src/src/plugins/
-        mkdir -p staged/src/plugins
-        rsync -av --ignore-existing onstepx-overlay/src/plugins/ staged/src/plugins/
-        
+    
     - name: Apply overlay
       if: github.event.inputs.overlay_target == 'e4'
       run: |
@@ -441,7 +409,7 @@ jobs:
       run: pip install platformio
 
     - name: Build firmware
-      run: pio run -e esp32dev
+      run: pio run -e esp32dev_full
 
     - name: Debug - Check compiled objects
       if: always()
