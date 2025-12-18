@@ -1,0 +1,487 @@
+name: Build OnStepX (vendored)
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_target:
+        type: choice
+        description: 'Source to build'
+        required: true
+        default: main-head
+        options: 
+        - release-v10.18c
+        - release-v10.20a
+        - release-v10.24c
+        - main-head
+        - e4-head
+
+      overlay_target:
+        type: choice
+        description: 'Overlay source'
+        required: true
+        default: none
+        options:
+        - none
+        - e4
+        
+      pin_map:
+        type: choice
+        description: 'Pin map'
+        required: true
+        default: FYSETC-E4
+        options:
+        - BTT_SKR_PRO
+        - FYSETC-E4
+        - MaxESP4
+        - MaxPCB4
+        - MaxSTM3
+        - MiniPCB
+        - MiniPCB2
+        
+      driver_model:
+        type: choice
+        description: 'Motor driver model'
+        required: true
+        default: 'TMC2209'
+        options: 
+        - A4988
+        - DRV8825
+        - LV8729
+        - S109
+        - TMC2130
+        - TMC5160
+        - TMC2209
+        - TMC2226
+        
+      stepper_steps:
+        type: choice
+        description: 'Stepper motor steps'
+        required: true
+        default: 400
+        options:
+        - 200
+        - 400
+        
+      micro_steps:
+        type: choice
+        description: 'Microsteps'
+        required: true
+        default: 32
+        options:
+        - 16
+        - 32
+        - 64
+        
+      gear_reduction_ratio:
+        type: choice
+        description: 'Reduction from motor to worm'
+        required: true
+        default: 3
+        options:
+        - 2
+        - 3
+        - 4
+        - 5
+        
+      final_reduction:
+        type: choice
+        description: 'Teeth in worm gear'
+        required: true
+        default: 144
+        options:
+        - 144
+        - 360
+        
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    # ------------------------------------------------------------
+    # Checkout *your* build project
+    # ------------------------------------------------------------
+    - name: Checkout build harness
+      uses: actions/checkout@v4
+
+    # ------------------------------------------------------------
+    # Fetch OnStepX sources into temp directory
+    # ------------------------------------------------------------
+    - name: Fetch OnStepX sources
+      run: |
+        case "${{ github.event.inputs.build_target }}" in
+          release-v10.18c) REF=v10.18c ;;
+          release-v10.20a) REF=v10.20a ;;
+          release-v10.24c) REF=v10.24c ;;
+          main-head)       REF=main ;;
+          e4-head)         REF=E4 ;;
+        esac
+
+        echo "Using OnStepX ref: $REF"
+
+        git clone --depth 1 --branch "$REF" \
+          https://github.com/hjd1964/OnStepX.git onstepx-src
+
+    # ------------------------------------------------------------
+    # Optional overlay fetch
+    # ------------------------------------------------------------
+    - name: Fetch overlay
+      if: github.event.inputs.overlay_target == 'e4'
+      run: |
+        git clone --depth 1 --branch E4 \
+          https://github.com/hjd1964/OnStepX.git onstepx-overlay
+
+    # ----------------------------
+    # ----------------------------
+    # ------------------------------------------------------------
+    # Stage OnStepX sources into PlatformIO project
+    # ------------------------------------------------------------
+    - name: Stage OnStepX sources
+      run: |
+        echo "Staging OnStepX source tree"
+
+        # Clear old staged folder
+        rm -rf staged
+        mkdir -p staged
+
+        # Copy all OnStepX source files into src/src/
+        cp -a onstepx-src/src/ staged/
+
+        # Copy top-level files (Config.h, Extended.config.h, *.ino) to src/
+        cp onstepx-src/Config.h staged/ 2>/dev/null || true
+        cp onstepx-src/Extended.config.h staged/ 2>/dev/null || true
+        cp onstepx-src/*.ino staged/ 2>/dev/null || true
+        
+    # ------------------------------------------------------------
+    # Apply overlay (config + plugins only)
+    # ------------------------------------------------------------
+    #- name: Apply overlay
+    #  if: github.event.inputs.build_target == 'main-head+e4-overlay'
+    #  run: |
+    #    ## echo "Applying E4 overlay"
+    #    echo "Merging E4 overlay with main"
+    #    # --------------------------------------
+    #    # Merge Config.h
+    #    # --------------------------------------
+    #    cp onstepx-e4/Config.h Config-e4.h
+    #    cp Config.h Config-main.h
+    #    cp Config-e4.h Config.h
+
+    #    grep "^#define" Config-main.h | awk '{print $2}' | sort > main.txt
+    #    grep "^#define" Config-e4.h  | sort > e4.txt
+    #    comm -23 main.txt e4.txt > main-only.txt
+
+    #    if [ -s main-only.txt ]; then
+    #      echo "" >> Config.h
+    #      echo "// ==== Added from main ====" >> Config.h
+    #      while read def; do
+    #        awk "/^#define $def/{print}" Config-main.h >> Config.h
+    #      done < main-only.txt
+    #    fi
+
+    #    rm -f Config-e4.h Config-main.h main.txt e4.txt main-only.txt
+
+    #    cp onstepx-e4/Config.h . 2>/dev/null || true
+        
+    #    ## cp onstepx-e4/Extended.config.h . 2>/dev/null || true
+    #    # --------------------------------------
+    #    # Merge Extended.config.h (if exists)
+    #    # --------------------------------------
+    #    if [ -f onstepx-e4/Extended.config.h ]; then
+    #      cp onstepx-e4/Extended.config.h .
+    #    fi
+    
+    #    ## rm -rf src/plugins
+    #    ## cp -a onstepx-e4/src/plugins src/
+    #    # --------------------------------------
+    #    # Merge plugin folder
+    #    # --------------------------------------
+    #    mkdir -p src/plugins
+    #    rsync -av --ignore-existing onstepx-e4/src/plugins/ src/plugins/
+
+    # ------------------------------------------------------------
+    # Apply E4 overlay (config + plugins only)
+    # ------------------------------------------------------------
+    - name: Apply overlay
+      if: github.event.inputs.overlay_target == 'e4'
+      run: |
+        echo "Merging overlay with main"
+
+        # Merge Config.h
+        cp onstepx-overlay/Config.h staged/Config-overlay.h
+        cp staged/Config.h staged/Config-main.h
+        cp staged/Config-overlay.h staged/Config.h
+
+        grep "^#define" staged/Config-main.h | awk '{print $2}' | sort > main.txt
+        grep "^#define" staged/Config-overlay.h  | sort > overlay.txt
+        comm -23 main.txt overlay.txt > main-only.txt
+
+        if [ -s main-only.txt ]; then
+          echo "" >> staged/Config.h
+          echo "// ==== Added from main ====" >> staged/Config.h
+          while read def; do
+        awk "/^#define $def/{print}" staged/Config-main.h >> staged/Config.h
+          done < main-only.txt
+        fi
+
+        rm -f staged/Config-overlay.h staged/Config-main.h main.txt overlay.txt main-only.txt
+
+        # Merge Extended.config.h if it exists
+        if [ -f onstepx-overlay/Extended.config.h ]; then
+          cp onstepx-overlay/Extended.config.h staged/
+        fi
+
+        # Merge plugin folder into src/src/plugins/
+        mkdir -p staged/src/plugins
+        rsync -av --ignore-existing onstepx-overlay/src/plugins/ staged/src/plugins/
+    
+    # ------
+    # Apply Config settings
+    # ------
+    #- name: Apply config settings to src
+    #  run: |
+    #    echo "Applying Config.h patches"
+        
+    #    grep "^#define PINMAP" Config.h || echo "     PINMAP: not defined"
+    #    grep "^#define STATUS_LED" Config.h || echo "     STATUS_LED: not defined"
+    #    grep "^#define AXIS1_DRIVER_MODEL" Config.h || echo "     AXIS1_DRIVER_MODEL: not defined"
+    #    grep "^#define AXIS2_DRIVER_MODEL" Config.h || echo "     AXIS2_DRIVER_MODEL: not defined"
+    #    grep "^#define AXIS1_STEPS_PER_DEGREE" Config.h || echo "     AXIS1_STEPS_PER_DEGREE: not defined"
+    #    grep "^#define AXIS2_STEPS_PER_DEGREE" Config.h || echo "     AXIS2_STEPS_PER_DEGREE: not defined"
+    #    grep "^#define AXIS1_DRIVER_MICROSTEPS" Config.h || echo "     AXIS1_DRIVER_MICROSTEPS: not defined"
+    #    grep "^#define AXIS2_DRIVER_MICROSTEPS" Config.h || echo "     AXIS2_DRIVER_MICROSTEPS: not defined"
+    #    grep "^#define AXIS1_DRIVER_REVERSE" Config.h || echo "     AXIS1_DRIVER_REVERSE : not defined"
+    #    grep "^#define AXIS2_DRIVER_REVERSE" Config.h || echo "     AXIS2_DRIVER_REVERSE : not defined"
+    #    grep "^#define MOUNT_TYPE" Config.h || echo "     MOUNT_TYPE : not defined"
+    #    grep "^#define PEC_STEPS_PER_WORM_ROTATION" Config.h || echo "     PEC_STEPS_PER_WORM_ROTATION : not defined"
+  
+    #    sed -i "s/^#define[[:space:]]\+HOST_NAME[[:space:]]\+.*$/#define HOST_NAME OnStepX/" Config.h
+    #    grep "^#define HOST_NAME[[:space:]]" Config.h || echo "     HOST_NAME : not defined"
+   
+    #    sed -i "s/^#define[[:space:]]\+SERIAL_B_BAUD_DEFAULT[[:space:]]\+.*$/#define SERIAL_B_BAUD_DEFAULT OFF/" Config.h
+    #    grep "^#define SERIAL_B_BAUD_DEFAULT[[:space:]]" Config.h || echo "     Serial B Baud Default : not defined"
+
+    #    sed -i "s/^#define[[:space:]]\+AXIS1_DRIVER_MODEL[[:space:]]\+.*$/#define AXIS1_DRIVER_MODEL ${{ github.event.inputs.driver_model }}/" Config.h
+    #    grep "^#define AXIS1_DRIVER_MODEL[[:space:]]" Config.h || echo "     AXIS1_DRIVER_MODEL : not defined"
+    #    sed -i "s/^#define[[:space:]]\+AXIS2_DRIVER_MODEL[[:space:]]\+.*$/#define AXIS2_DRIVER_MODEL ${{ github.event.inputs.driver_model }}/" Config.h
+    #    grep "^#define AXIS2_DRIVER_MODEL[[:space:]]" Config.h || echo "     AXIS2_DRIVER_MODEL : not defined"
+        
+    #    temp_var=$(( 
+    #        ${{ github.event.inputs.stepper_steps }} *
+    #        ${{ github.event.inputs.micro_steps }} *
+    #        ${{ github.event.inputs.gear_reduction_ratio }} *
+    #        ${{ github.event.inputs.final_reduction }} / 360
+    #    ))
+    #    sed -i "s/^#define[[:space:]]\+AXIS1_STEPS_PER_DEGREE[[:space:]]\+.*$/#define AXIS1_STEPS_PER_DEGREE $temp_var/" Config.h
+    #    grep "^#define AXIS1_STEPS_PER_DEGREE[[:space:]]" Config.h || echo "     AXIS1_STEPS_PER_DEGREE : not defined"
+    #    sed -i "s/^#define[[:space:]]\+AXIS2_STEPS_PER_DEGREE[[:space:]]\+.*$/#define AXIS2_STEPS_PER_DEGREE $temp_var/" Config.h
+    #    grep "^#define AXIS2_STEPS_PER_DEGREE[[:space:]]" Config.h || echo "     AXIS2_STEPS_PER_DEGREE : not defined"
+        
+    #    sed -i "s/^#define[[:space:]]\+AXIS1_DRIVER_MICROSTEPS[[:space:]]\+.*$/#define AXIS1_DRIVER_MICROSTEPS ${{ github.event.inputs.micro_steps }}/" Config.h
+    #    grep "^#define AXIS1_DRIVER_MICROSTEPS[[:space:]]" Config.h || echo "     AXIS1_DRIVER_MICROSTEPS : not defined"
+    #    sed -i "s/^#define[[:space:]]\+AXIS2_DRIVER_MICROSTEPS[[:space:]]\+.*$/#define AXIS2_DRIVER_MICROSTEPS ${{ github.event.inputs.micro_steps }}/" Config.h
+    #    grep "^#define AXIS2_DRIVER_MICROSTEPS[[:space:]]" Config.h || echo "     AXIS2_DRIVER_MICROSTEPS : not defined"
+
+    #    temp_var=$(( 
+    #        ${{ github.event.inputs.stepper_steps }} *
+    #        ${{ github.event.inputs.micro_steps }} *
+    #        ${{ github.event.inputs.gear_reduction_ratio }}
+    #    ))
+    #    sed -i "s/^#define[[:space:]]\+PEC_STEPS_PER_WORM_ROTATION[[:space:]]\+.*$/#define PEC_STEPS_PER_WORM_ROTATION $temp_var/" Config.h
+    #    grep "^#define PEC_STEPS_PER_WORM_ROTATION[[:space:]]" Config.h || echo "     PEC_STEPS_PER_WORM_ROTATION : not defined"
+
+    # ------------------------------------------------------------
+    # Apply config settings to staged Config.h
+    # ------------------------------------------------------------
+    - name: Apply config settings to staged Config.h
+      run: |
+        CONFIG_FILE="staged/Config.h"
+        echo "Patching $CONFIG_FILE"
+
+        # Basic checks
+        grep "^#define PINMAP" $CONFIG_FILE || echo "PINMAP: not defined"
+        grep "^#define STATUS_LED" $CONFIG_FILE || echo "STATUS_LED: not defined"
+        grep "^#define AXIS1_DRIVER_MODEL" $CONFIG_FILE || echo "AXIS1_DRIVER_MODEL: not defined"
+        grep "^#define AXIS2_DRIVER_MODEL" $CONFIG_FILE || echo "AXIS2_DRIVER_MODEL: not defined"
+
+        # Set HOST_NAME
+        sed -i "s/^#define[[:space:]]\+HOST_NAME[[:space:]]\+.*$/#define HOST_NAME \"OnStepX\"/" $CONFIG_FILE
+        grep "^#define HOST_NAME" $CONFIG_FILE || echo "HOST_NAME: not defined"
+
+        ### Ensure SERIAL_B macros exist
+        ## grep -q '^#define SERIAL_B' $CONFIG_FILE || echo '#define SERIAL_B 1' >> $CONFIG_FILE
+        ## grep -q '^#define SERIAL_B_BAUD_DEFAULT' $CONFIG_FILE || echo '#define SERIAL_B_BAUD_DEFAULT OFF' >> $CONFIG_FILE
+        # Set SERIAL_B_BAUD_DEFAULT to OFF (SERIAL_B is not defined for this board)
+        sed -i 's/^#define[[:space:]]\+SERIAL_B_BAUD_DEFAULT[[:space:]]\+[^/]*/#define SERIAL_B_BAUD_DEFAULT        OFF /' $CONFIG_FILE
+        grep "^#define SERIAL_B_BAUD_DEFAULT" $CONFIG_FILE
+
+        # Set driver model
+        sed -i "s/^#define[[:space:]]\+AXIS1_DRIVER_MODEL[[:space:]]\+.*$/#define AXIS1_DRIVER_MODEL ${{ github.event.inputs.driver_model }}/" $CONFIG_FILE
+        sed -i "s/^#define[[:space:]]\+AXIS2_DRIVER_MODEL[[:space:]]\+.*$/#define AXIS2_DRIVER_MODEL ${{ github.event.inputs.driver_model }}/" $CONFIG_FILE
+
+        # Compute steps per degree
+        STEPS_PER_DEGREE=$(( 
+            ${{ github.event.inputs.stepper_steps }} *
+            ${{ github.event.inputs.micro_steps }} *
+            ${{ github.event.inputs.gear_reduction_ratio }} *
+            ${{ github.event.inputs.final_reduction }} / 360
+        ))
+        sed -i "s/^#define[[:space:]]\+AXIS1_STEPS_PER_DEGREE[[:space:]]\+.*$/#define AXIS1_STEPS_PER_DEGREE $STEPS_PER_DEGREE/" $CONFIG_FILE
+        sed -i "s/^#define[[:space:]]\+AXIS2_STEPS_PER_DEGREE[[:space:]]\+.*$/#define AXIS2_STEPS_PER_DEGREE $STEPS_PER_DEGREE/" $CONFIG_FILE
+
+        # Set microsteps
+        sed -i "s/^#define[[:space:]]\+AXIS1_DRIVER_MICROSTEPS[[:space:]]\+.*$/#define AXIS1_DRIVER_MICROSTEPS ${{ github.event.inputs.micro_steps }}/" $CONFIG_FILE
+        sed -i "s/^#define[[:space:]]\+AXIS2_DRIVER_MICROSTEPS[[:space:]]\+.*$/#define AXIS2_DRIVER_MICROSTEPS ${{ github.event.inputs.micro_steps }}/" $CONFIG_FILE
+
+        # PEC steps per worm rotation
+        PEC_STEPS=$(( 
+            ${{ github.event.inputs.stepper_steps }} *
+            ${{ github.event.inputs.micro_steps }} *
+            ${{ github.event.inputs.gear_reduction_ratio }}
+        ))
+        sed -i "s/^#define[[:space:]]\+PEC_STEPS_PER_WORM_ROTATION[[:space:]]\+.*$/#define PEC_STEPS_PER_WORM_ROTATION $PEC_STEPS/" $CONFIG_FILE
+
+        echo "Patched $CONFIG_FILE successfully"
+        
+    - name: Debug Config.h
+      run: |
+        echo "=== SERIAL_B related lines ==="
+        grep -i "SERIAL_B" staged/Config.h || echo "No SERIAL_B found"
+        echo ""
+        echo "=== Last 20 lines of Config.h ==="
+        tail -20 staged/Config.h
+    
+    # ------------------------------------------------------------
+    # Build with PlatformIO
+    # ------------------------------------------------------------
+    - name: Install PlatformIO
+      run: pip install platformio
+
+    - name: Build firmware
+      run: pio run -e esp32dev
+
+    - name: Debug - Check compiled objects
+      if: always()
+      run: |
+        echo "=== Compiled object files ==="
+        find .pio/build -name "*.o" | head -30
+    
+        echo ""
+        echo "=== Looking for OnStepX.ino compilation ==="
+        find .pio/build -name "*OnStepX*" -o -name "*onstepx*"
+
+    # ------------------------------------------------------------
+    # Upload artifacts
+    # ------------------------------------------------------------
+    #- name: Upload artifacts
+    #  uses: actions/upload-artifact@v4
+    #  with:
+    #    name: onstepx-${{ github.event.inputs.build_target }}
+    #    path: |
+    #      .pio/build/**/firmware.*
+    #    retention-days: 30
+    
+    - name: List build output files
+      run: |
+        echo "Build completed. Output files:"
+        cp ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin .pio/build/esp32dev/
+        ls -la .pio/build/esp32dev/ || echo "Build directory not found"
+
+    - name: Debug - Verify firmware contents
+      run: |
+        echo "=== Firmware files created ==="
+        ls -la .pio/build/esp32dev/firmware.*
+    
+        echo ""
+        echo "=== Firmware sizes ==="
+        stat --printf="firmware.bin: %s bytes\n" .pio/build/esp32dev/firmware.bin
+    
+        echo ""
+        echo "=== Symbols from OnStepX.ino (confirming it's linked) ==="
+        # Find the correct toolchain path
+        NM_TOOL=$(find ~/.platformio/packages -name "xtensa-esp32-elf-nm" 2>/dev/null | head -1)
+        if [ -n "$NM_TOOL" ]; then
+          echo "Using: $NM_TOOL"
+          $NM_TOOL .pio/build/esp32dev/firmware.elf | grep -E "setup|loop" | head -10
+        else
+          echo "nm tool not found, but firmware.bin exists so build succeeded"
+        fi
+        
+    - name: Debug - Search for firmware constants
+      run: |
+        echo "=== Search for FirmwareName string value ==="
+        strings .pio/build/esp32dev/firmware.bin | grep -i "On-Step"
+    
+        echo ""
+        echo "=== Search for OnStep variations ==="
+        strings .pio/build/esp32dev/firmware.bin | grep -iE "onstep|on-step"
+    
+        echo ""
+        echo "=== Look for version strings (likely concatenated at runtime) ==="
+        strings .pio/build/esp32dev/firmware.bin | grep -E "10\.[0-9]+" | head -10
+    
+        echo ""
+        echo "=== All strings containing 'step' ==="
+        strings .pio/build/esp32dev/firmware.bin | grep -i "step" | head -20
+  
+    - name: Merge Final Binary
+      run: |
+        # Build environment and chip settings
+        BUILD_ENV="esp32dev"
+        CHIP="esp32"
+        FLASH_MODE="dio"
+        FLASH_FREQ="40m"
+    
+        # Determine flash size based on board/pin map
+        case "${{ github.event.inputs.pin_map }}" in
+          FYSETC-E4)
+            FLASH_SIZE="4MB"
+            ;;
+          MaxESP4)
+            FLASH_SIZE="16MB"
+            ;;
+          *)
+            FLASH_SIZE="4MB"
+            ;;
+        esac
+    
+        # Define paths
+        BUILD_DIR=".pio/build/${BUILD_ENV}"
+        FIRMWARE_BIN="${BUILD_DIR}/firmware.bin"
+        BOOTLOADER_BIN="${BUILD_DIR}/bootloader.bin"
+        PARTITIONS_BIN="${BUILD_DIR}/partitions.bin"
+        BOOT_APP0_BIN="${BUILD_DIR}/boot_app0.bin"
+    
+        # Verify all required files exist
+        for f in "$FIRMWARE_BIN" "$BOOTLOADER_BIN" "$PARTITIONS_BIN" "$BOOT_APP0_BIN"; do
+          if [ ! -f "$f" ]; then
+            echo "ERROR: Required file not found: $f"
+            exit 1
+          fi
+        done
+    
+        # Generate output filename with build details
+        OUTPUT_NAME="${{ github.event.inputs.pin_map }}_${{ github.event.inputs.build_target }}_${{ github.event.inputs.driver_model }}_firmware.bin"
+    
+        # Merge binaries
+        pio pkg exec --package "platformio/tool-esptoolpy@~1.40501.0" -- esptool.py \
+          --chip ${CHIP} merge_bin \
+          --flash_mode ${FLASH_MODE} \
+          --flash_freq ${FLASH_FREQ} \
+          --flash_size ${FLASH_SIZE} \
+          0x1000 "${BOOTLOADER_BIN}" \
+          0x8000 "${PARTITIONS_BIN}" \
+          0xe000 "${BOOT_APP0_BIN}" \
+          0x10000 "${FIRMWARE_BIN}" \
+          -o "${OUTPUT_NAME}"
+
+        echo "Files :"
+        ls -l
+        echo "----------"
+        
+        echo "Merged binary created: ${OUTPUT_NAME}"
+        echo "Flash size: ${FLASH_SIZE}"
+        echo ""
+        echo "To flash on Linux:"
+        echo "  esptool.py --port /dev/ttyUSB0 --baud 460800 write_flash 0x0 ${OUTPUT_NAME}"
+    
+        # Export for artifact u
