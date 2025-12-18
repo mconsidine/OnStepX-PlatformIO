@@ -389,6 +389,16 @@ jobs:
     - name: Build firmware
       run: pio run -e esp32dev -v
 
+    - name: Debug - Check compiled objects
+      if: always()
+      run: |
+        echo "=== Compiled object files ==="
+        find .pio/build -name "*.o" | head -30
+    
+        echo ""
+        echo "=== Looking for OnStepX.ino compilation ==="
+        find .pio/build -name "*OnStepX*" -o -name "*onstepx*"
+
     # ------------------------------------------------------------
     # Upload artifacts
     # ------------------------------------------------------------
