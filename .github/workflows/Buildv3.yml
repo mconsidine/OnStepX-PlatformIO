@@ -203,11 +203,102 @@ jobs:
     # Apply E4 overlay (config + plugins only)
     # ------------------------------------------------------------
     
+    #- name: Apply overlay
+    #  if: github.event.inputs.overlay_target == 'e4'
+    #  run: |
+    #    echo "Merging overlay with main (two-way merge)"
+
+    #    cp onstepx-overlay/Config.h staged/Config-overlay.h
+    #    cp staged/Config.h staged/Config-main.h
+
+    #    # Extract define names from both
+    #    grep "^#define" staged/Config-main.h | awk '{print $2}' | sort -u > main-defines.txt
+    #    grep "^#define" staged/Config-overlay.h | awk '{print $2}' | sort -u > overlay-defines.txt
+
+    #    # Find unique to each and common to both
+    #    comm -23 main-defines.txt overlay-defines.txt > main-only.txt      # In main, not in overlay
+    #    comm -13 main-defines.txt overlay-defines.txt > overlay-only.txt   # In overlay, not in main
+    #    comm -12 main-defines.txt overlay-defines.txt > common.txt         # In both
+
+    #    echo "=== Merge Summary ==="
+    #    echo "Defines only in main: $(wc -l < main-only.txt)"
+    #    echo "Defines only in overlay: $(wc -l < overlay-only.txt)"
+    #    echo "Defines in both (overlay value used): $(wc -l < common.txt)"
+
+    #    # Start fresh Config.h with header
+    #    echo "// =============================================" > staged/Config.h
+    #    echo "// Merged Config.h: main + overlay" >> staged/Config.h
+    #    echo "// Base: overlay (${{ github.event.inputs.overlay_target }})" >> staged/Config.h
+    #    echo "// Merged from: ${{ github.event.inputs.build_target }}" >> staged/Config.h
+    #    echo "// =============================================" >> staged/Config.h
+    #    echo "" >> staged/Config.h
+
+    #    # 1. Add all defines from overlay (these take precedence for common defines)
+    #    echo "// ==== From overlay ====" >> staged/Config.h
+    #    grep "^#define" staged/Config-overlay.h >> staged/Config.h
+    #    echo "" >> staged/Config.h
+
+    #    # 2. Add defines that only exist in main
+    #    if [ -s main-only.txt ]; then
+    #      echo "// ==== Unique defines from main ====" >> staged/Config.h
+    #      while read def; do
+    #        grep "^#define[[:space:]]\+${def}[[:space:]]" staged/Config-main.h >> staged/Config.h || \
+    #        grep "^#define[[:space:]]\+${def}$" staged/Config-main.h >> staged/Config.h || true
+    #      done < main-only.txt
+    #      echo "" >> staged/Config.h
+    #    fi
+
+    #    # 3. Optionally log conflicts (defines with different values)
+    #    echo ""
+    #    echo "=== Potential Conflicts (same define, different values) ==="
+    #    while read def; do
+    #      MAIN_VAL=$(grep "^#define[[:space:]]\+${def}[[:space:]]" staged/Config-main.h | head -1)
+    #      OVERLAY_VAL=$(grep "^#define[[:space:]]\+${def}[[:space:]]" staged/Config-overlay.h | head -1)
+    #      if [ "$MAIN_VAL" != "$OVERLAY_VAL" ]; then
+    #        echo "CONFLICT: $def"
+    #        echo "  main:    $MAIN_VAL"
+    #        echo "  overlay: $OVERLAY_VAL (USED)"
+    #      fi
+    #    done < common.txt
+
+    #    # Cleanup
+    #    rm -f staged/Config-overlay.h staged/Config-main.h
+    #    rm -f main-defines.txt overlay-defines.txt main-only.txt overlay-only.txt common.txt
+
+    #    # Merge Extended.config.h if it exists in overlay
+    #    if [ -f onstepx-overlay/Extended.config.h ]; then
+    #      cp onstepx-overlay/Extended.config.h staged/
+    #    fi
+
+    #    # Merge plugin folders (overlay takes precedence, then fill in from main)
+    #    mkdir -p staged/src/plugins
+    
+    #    # First copy overlay plugins
+    #    if [ -d onstepx-overlay/src/plugins ]; then
+    #      rsync -av onstepx-overlay/src/plugins/ staged/src/plugins/
+    #    fi
+    
+    #    # Then add any plugins from main that don't exist in overlay
+    #    if [ -d onstepx-src/src/plugins ]; then
+    #      rsync -av --ignore-existing onstepx-src/src/plugins/ staged/src/plugins/
+    #    fi
+
+    #    echo ""
+    #    echo "=== Merge complete ==="
+
     - name: Apply overlay
       if: github.event.inputs.overlay_target == 'e4'
       run: |
+        echo "========================================"
         echo "Merging overlay with main (two-way merge)"
+        echo "========================================"
 
+        # ==========================================
+        # CONFIG.H MERGE
+        # ==========================================
+        echo ""
+        echo "=== Merging Config.h ==="
+    
         cp onstepx-overlay/Config.h staged/Config-overlay.h
         cp staged/Config.h staged/Config-main.h
 
@@ -216,29 +307,29 @@ jobs:
         grep "^#define" staged/Config-overlay.h | awk '{print $2}' | sort -u > overlay-defines.txt
 
         # Find unique to each and common to both
-        comm -23 main-defines.txt overlay-defines.txt > main-only.txt      # In main, not in overlay
-        comm -13 main-defines.txt overlay-defines.txt > overlay-only.txt   # In overlay, not in main
-        comm -12 main-defines.txt overlay-defines.txt > common.txt         # In both
+        comm -23 main-defines.txt overlay-defines.txt > main-only.txt
+        comm -13 main-defines.txt overlay-defines.txt > overlay-only.txt
+        comm -12 main-defines.txt overlay-defines.txt > common.txt
 
-        echo "=== Merge Summary ==="
         echo "Defines only in main: $(wc -l < main-only.txt)"
         echo "Defines only in overlay: $(wc -l < overlay-only.txt)"
         echo "Defines in both (overlay value used): $(wc -l < common.txt)"
 
         # Start fresh Config.h with header
-        echo "// =============================================" > staged/Config.h
-        echo "// Merged Config.h: main + overlay" >> staged/Config.h
-        echo "// Base: overlay (${{ github.event.inputs.overlay_target }})" >> staged/Config.h
-        echo "// Merged from: ${{ github.event.inputs.build_target }}" >> staged/Config.h
-        echo "// =============================================" >> staged/Config.h
-        echo "" >> staged/Config.h
+        cat > staged/Config.h << 'EOF'
+    // =============================================
+    // Merged Config.h: main + overlay
+    // Overlay takes precedence for common defines
+    // =============================================
 
-        # 1. Add all defines from overlay (these take precedence for common defines)
+    EOF
+
+        # Add all defines from overlay (these take precedence)
         echo "// ==== From overlay ====" >> staged/Config.h
         grep "^#define" staged/Config-overlay.h >> staged/Config.h
         echo "" >> staged/Config.h
 
-        # 2. Add defines that only exist in main
+        # Add defines that only exist in main
         if [ -s main-only.txt ]; then
           echo "// ==== Unique defines from main ====" >> staged/Config.h
           while read def; do
@@ -248,43 +339,112 @@ jobs:
           echo "" >> staged/Config.h
         fi
 
-        # 3. Optionally log conflicts (defines with different values)
+        # Log conflicts
         echo ""
-        echo "=== Potential Conflicts (same define, different values) ==="
+        echo "=== Conflicts (same define, different values - overlay used) ==="
+        CONFLICTS=0
         while read def; do
-          MAIN_VAL=$(grep "^#define[[:space:]]\+${def}[[:space:]]" staged/Config-main.h | head -1)
-          OVERLAY_VAL=$(grep "^#define[[:space:]]\+${def}[[:space:]]" staged/Config-overlay.h | head -1)
-          if [ "$MAIN_VAL" != "$OVERLAY_VAL" ]; then
-            echo "CONFLICT: $def"
-            echo "  main:    $MAIN_VAL"
-            echo "  overlay: $OVERLAY_VAL (USED)"
+          MAIN_VAL=$(grep "^#define[[:space:]]\+${def}[[:space:]]" staged/Config-main.h 2>/dev/null | head -1)
+          OVERLAY_VAL=$(grep "^#define[[:space:]]\+${def}[[:space:]]" staged/Config-overlay.h 2>/dev/null | head -1)
+          if [ -n "$MAIN_VAL" ] && [ -n "$OVERLAY_VAL" ] && [ "$MAIN_VAL" != "$OVERLAY_VAL" ]; then
+            echo "  $def"
+            echo "    main:    $MAIN_VAL"
+            echo "    overlay: $OVERLAY_VAL (USED)"
+            CONFLICTS=$((CONFLICTS + 1))
           fi
         done < common.txt
+        echo "Total conflicts: $CONFLICTS"
 
-        # Cleanup
+        # Cleanup config merge temp files
         rm -f staged/Config-overlay.h staged/Config-main.h
         rm -f main-defines.txt overlay-defines.txt main-only.txt overlay-only.txt common.txt
 
-        # Merge Extended.config.h if it exists in overlay
+        # ==========================================
+        # EXTENDED.CONFIG.H
+        # ==========================================
         if [ -f onstepx-overlay/Extended.config.h ]; then
+          echo ""
+          echo "=== Copying Extended.config.h from overlay ==="
           cp onstepx-overlay/Extended.config.h staged/
         fi
 
-        # Merge plugin folders (overlay takes precedence, then fill in from main)
-        mkdir -p staged/src/plugins
-    
-        # First copy overlay plugins
-        if [ -d onstepx-overlay/src/plugins ]; then
-          rsync -av onstepx-overlay/src/plugins/ staged/src/plugins/
-        fi
-    
-        # Then add any plugins from main that don't exist in overlay
-        if [ -d onstepx-src/src/plugins ]; then
-          rsync -av --ignore-existing onstepx-src/src/plugins/ staged/src/plugins/
-        fi
-
+        # ==========================================
+        # PLUGIN MERGE
+        # ==========================================
         echo ""
-        echo "=== Merge complete ==="
+        echo "=== Merging plugins ==="
+    
+        # At this point, staged/src/plugins has main's plugins (from Stage step)
+        # Overlay takes precedence for any matching files
+    
+        if [ -d onstepx-overlay/src/plugins ]; then
+      
+          # 1. Handle files directly in plugins/ folder
+          echo "Merging files in plugins/ root..."
+          for f in onstepx-overlay/src/plugins/*; do
+            if [ -f "$f" ]; then
+              BASENAME=$(basename "$f")
+              echo "  Overlay file: $BASENAME"
+              cp -f "$f" "staged/src/plugins/$BASENAME"
+            fi
+          done
+      
+          # 2. Handle plugin subfolders
+          echo "Merging plugin subfolders..."
+          for dir in onstepx-overlay/src/plugins/*/; do
+            if [ -d "$dir" ]; then
+              DIRNAME=$(basename "$dir")
+              echo "  Overlay folder: $DIRNAME"
+          
+              mkdir -p "staged/src/plugins/$DIRNAME"
+          
+              # Copy all files from overlay subfolder (overwriting main's versions)
+              cp -f "$dir"* "staged/src/plugins/$DIRNAME/" 2>/dev/null || true
+          
+              # Handle nested subdirectories within plugin folders
+              for subdir in "$dir"*/; do
+                if [ -d "$subdir" ]; then
+                  SUBDIRNAME=$(basename "$subdir")
+                  mkdir -p "staged/src/plugins/$DIRNAME/$SUBDIRNAME"
+                  cp -rf "$subdir"* "staged/src/plugins/$DIRNAME/$SUBDIRNAME/" 2>/dev/null || true
+                  echo "    Nested: $DIRNAME/$SUBDIRNAME"
+                fi
+              done
+            fi
+          done
+      
+          # 3. Report main-only plugin folders (already in staged)
+          echo ""
+          echo "Main-only plugin folders (preserved):"
+          if [ -d onstepx-src/src/plugins ]; then
+            for dir in onstepx-src/src/plugins/*/; do
+              if [ -d "$dir" ]; then
+                DIRNAME=$(basename "$dir")
+                if [ ! -d "onstepx-overlay/src/plugins/$DIRNAME" ]; then
+                  echo "  $DIRNAME"
+                fi
+              fi
+            done
+          fi
+      
+        else
+          echo "No overlay plugins directory found"
+        fi
+    
+        echo ""
+        echo "=== Plugin merge summary ==="
+        echo "Root plugin files: $(find staged/src/plugins -maxdepth 1 -type f 2>/dev/null | wc -l)"
+        echo "Plugin subfolders: $(find staged/src/plugins -mindepth 1 -maxdepth 1 -type d 2>/dev/null | wc -l)"
+        echo "Total plugin files: $(find staged/src/plugins -type f 2>/dev/null | wc -l)"
+    
+        echo ""
+        echo "=== Staged plugin structure ==="
+        find staged/src/plugins -type f | sort | head -40
+    
+        echo ""
+        echo "========================================"
+        echo "Merge complete"
+        echo "========================================"
     
     # ------
     # Apply Config settings
