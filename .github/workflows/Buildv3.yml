@@ -435,17 +435,17 @@ jobs:
     - name: List build output files
       run: |
         echo "Build completed. Output files:"
-        cp ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin .pio/build/esp32dev/
-        ls -la .pio/build/esp32dev/ || echo "Build directory not found"
+        cp ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin .pio/build/esp32dev_full/
+        ls -la .pio/build/esp32dev_full/ || echo "Build directory not found"
 
     - name: Debug - Verify firmware contents
       run: |
         echo "=== Firmware files created ==="
-        ls -la .pio/build/esp32dev/firmware.*
+        ls -la .pio/build/esp32dev_full/firmware.*
     
         echo ""
         echo "=== Firmware sizes ==="
-        stat --printf="firmware.bin: %s bytes\n" .pio/build/esp32dev/firmware.bin
+        stat --printf="firmware.bin: %s bytes\n" .pio/build/esp32dev_full/firmware.bin
     
         echo ""
         echo "=== Symbols from OnStepX.ino (confirming it's linked) ==="
@@ -453,7 +453,7 @@ jobs:
         NM_TOOL=$(find ~/.platformio/packages -name "xtensa-esp32-elf-nm" 2>/dev/null | head -1)
         if [ -n "$NM_TOOL" ]; then
           echo "Using: $NM_TOOL"
-          $NM_TOOL .pio/build/esp32dev/firmware.elf | grep -E "setup|loop" | head -10
+          $NM_TOOL .pio/build/esp32dev_full/firmware.elf | grep -E "setup|loop" | head -10
         else
           echo "nm tool not found, but firmware.bin exists so build succeeded"
         fi
@@ -461,24 +461,24 @@ jobs:
     - name: Debug - Search for firmware constants
       run: |
         echo "=== Search for FirmwareName string value ==="
-        strings .pio/build/esp32dev/firmware.bin | grep -i "On-Step"
+        strings .pio/build/esp32dev_full/firmware.bin | grep -i "On-Step"
     
         echo ""
         echo "=== Search for OnStep variations ==="
-        strings .pio/build/esp32dev/firmware.bin | grep -iE "onstep|on-step"
+        strings .pio/build/esp32dev_full/firmware.bin | grep -iE "onstep|on-step"
     
         echo ""
         echo "=== Look for version strings (likely concatenated at runtime) ==="
-        strings .pio/build/esp32dev/firmware.bin | grep -E "10\.[0-9]+" | head -10
+        strings .pio/build/esp32dev_full/firmware.bin | grep -E "10\.[0-9]+" | head -10
     
         echo ""
         echo "=== All strings containing 'step' ==="
-        strings .pio/build/esp32dev/firmware.bin | grep -i "step" | head -20
+        strings .pio/build/esp32dev_full/firmware.bin | grep -i "step" | head -20
   
     - name: Merge Final Binary
       run: |
         # Build environment and chip settings
-        BUILD_ENV="esp32dev"
+        BUILD_ENV="esp32dev_full"
         CHIP="esp32"
         FLASH_MODE="dio"
         FLASH_FREQ="40m"
