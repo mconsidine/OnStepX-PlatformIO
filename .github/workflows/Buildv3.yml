@@ -705,7 +705,7 @@ jobs:
     - name: 📦 Upload Merged Binary Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ${{ github.event.inputs.pin_map }}-${{ github.event.inputs.build_target }}-${{ github.event.inputs.driver_model }}
+        name: ${{ github.event.inputs.pin_map }}-${{ github.event.inputs.build_target }}-${{ github.event.inputs.overlay_target }}-${{ github.event.inputs.driver_model }}
         path: ${{ env.OUTPUT_NAME }}
         
     # ------------------------------------------------------------
@@ -714,5 +714,5 @@ jobs:
     - name: Cleanup
       if: always()
       run: |
-        rm -rf onstepx-src onstepx-overlay staged
+        rm -rf onstepx-src onstepx-overlay onstepx-plugins staged
 
