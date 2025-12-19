@@ -317,12 +317,12 @@ jobs:
 
         # Start fresh Config.h with header
         cat > staged/Config.h << 'EOF'
-    // =============================================
-    // Merged Config.h: main + overlay
-    // Overlay takes precedence for common defines
-    // =============================================
+        // =============================================
+        // Merged Config.h: main + overlay
+        // Overlay takes precedence for common defines
+        // =============================================
 
-    EOF
+        EOF
 
         # Add all defines from overlay (these take precedence)
         echo "// ==== From overlay ====" >> staged/Config.h
