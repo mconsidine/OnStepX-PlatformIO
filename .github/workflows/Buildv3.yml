@@ -120,6 +120,9 @@ jobs:
 
         git clone --depth 1 --branch "$REF" \
           https://github.com/hjd1964/OnStepX.git onstepx-src
+          
+        git clone --depth 1 --branch main \
+          https://github.com/hjd1964/OnStepX-Plugins.git onstepx-plugins
 
     # ------------------------------------------------------------
     # Optional overlay fetch
@@ -377,11 +380,11 @@ jobs:
         # At this point, staged/src/plugins has main's plugins (from Stage step)
         # Overlay takes precedence for any matching files
     
-        if [ -d onstepx-overlay/src/plugins ]; then
+        if [ -d onstepx-plugins ]; then
       
           # 1. Handle files directly in plugins/ folder
           echo "Merging files in plugins/ root..."
-          for f in onstepx-overlay/src/plugins/*; do
+          for f in onstepx-plugins/website; do
             if [ -f "$f" ]; then
               BASENAME=$(basename "$f")
               echo "  Overlay file: $BASENAME"
@@ -391,7 +394,7 @@ jobs:
       
           # 2. Handle plugin subfolders
           echo "Merging plugin subfolders..."
-          for dir in onstepx-overlay/src/plugins/*/; do
+          for dir in onstepx-plugins/website/; do
             if [ -d "$dir" ]; then
               DIRNAME=$(basename "$dir")
               echo "  Overlay folder: $DIRNAME"
@@ -420,7 +423,7 @@ jobs:
             for dir in onstepx-src/src/plugins/*/; do
               if [ -d "$dir" ]; then
                 DIRNAME=$(basename "$dir")
-                if [ ! -d "onstepx-overlay/src/plugins/$DIRNAME" ]; then
+                if [ ! -d "onstepx-plugins/$DIRNAME" ]; then
                   echo "  $DIRNAME"
                 fi
               fi
