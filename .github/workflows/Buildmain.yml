@@ -1,4 +1,4 @@
-name: buildmain: Build OnStepX main
+name: Buildmain - Build OnStepX main
 
 # This workflow only runs when manually triggered
 on:
