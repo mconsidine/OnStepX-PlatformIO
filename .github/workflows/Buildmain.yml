@@ -57,7 +57,7 @@ jobs:
         echo "✓ Complete main source copied"
         
         echo ""
-        echo "=== nain Source Structure ==="
+        echo "=== main Source Structure ==="
         ls -la src/ 2>/dev/null || echo "src/ not found"
         echo ""
         ls -la src/plugins/ 2>/dev/null || echo "src/plugins/ not found"
@@ -127,7 +127,7 @@ jobs:
         echo "End of current folder structure"
         ####ls ~/.platformio/packages/framework-arduinoespressif32/tools/partitions
         echo "packages folder:"
-        ls -lha /home
+        ls -lha /home/runner
         echo "Building OnStepX for main..."
         pio run -e esp32dev --disable-auto-clean
     
