@@ -51,7 +51,7 @@ pid =
     https://github.com/Dlloydev/QuickPID.git
 
 [env:esp32dev]
-platform = espressif32@6.12.0
+platform = espressif32@6.13.0
 board = esp32dev
 framework = ${common.framework}
 
