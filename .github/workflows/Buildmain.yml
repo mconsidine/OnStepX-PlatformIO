@@ -1,4 +1,4 @@
-name: Build OnStepX main
+name: buildmain: Build OnStepX main
 
 # This workflow only runs when manually triggered
 on:
@@ -32,7 +32,7 @@ jobs:
         # Clean up the temporary directory
         rm -rf external_odrive_checkout
     
-    - name: Copy complete nain source from upstream
+    - name: Copy complete main source from upstream
       run: |
         echo "Adding upstream remote and fetching branches..."
         git remote add upstream https://github.com/hjd1964/OnStepX.git
@@ -122,10 +122,16 @@ jobs:
       run: |
         echo "Current folder structure"
         ls -la
-        cat Config.h
-        cat Extended.config.h
+        ##cat Config.h
+        ##cat Extended.config.h
         echo "End of current folder structure"
-        ls ~/.platformio/packages/framework-arduinoespressif32/tools/partitions
+        ####ls ~/.platformio/packages/framework-arduinoespressif32/tools/partitions
+        echo "packages folder:"
+        ls ~/.platformio/packages/
+        echo "framework folder:"
+        ls ~/.platformio/packages/framework-arduinoespressif32/
+        echo "tools folder:"
+        ls ~/.platformio/packages/framework-arduinoespressif32/tools/
         echo "Building OnStepX for main..."
         pio run -e esp32dev --disable-auto-clean
     
