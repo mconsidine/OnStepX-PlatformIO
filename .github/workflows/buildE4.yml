@@ -124,7 +124,7 @@ jobs:
         echo "End of current folder structure"
         echo "cp src staged"
         mkdir -p staged
-        cp src staged
+        cp -a src staged
         echo "Building OnStepX for E4..."
         pio run -e esp32dev --disable-auto-clean
         echo "ls partitions folder"
