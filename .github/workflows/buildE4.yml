@@ -122,10 +122,14 @@ jobs:
         cat Config.h
         cat Extended.config.h
         echo "End of current folder structure"
-        ls ~/.platformio/packages/framework-arduinoespressif32/tools/partitions
+        echo "cp src staged"
+        mkdir -p staged
+        cp src staged
         echo "Building OnStepX for E4..."
         pio run -e esp32dev --disable-auto-clean
-    
+        echo "ls partitions folder"
+        ls -lha ~/.platformio/packages/framework-arduinoespressif32/tools/partitions
+        
     - name: List build output files
       run: |
         echo "Build completed. Output files:"
