@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-e4-branch:
+  build-main-branch:
     runs-on: ubuntu-latest
     
     steps:
@@ -127,12 +127,13 @@ jobs:
         echo "End of current folder structure"
         ####ls ~/.platformio/packages/framework-arduinoespressif32/tools/partitions
         echo "packages folder:"
-        ls /home/runner/.platformio/packages/
+        ls -lha /home
         echo "Building OnStepX for main..."
         pio run -e esp32dev --disable-auto-clean
     
     - name: List build output files
       run: |
+        ls -lha ./pio
         echo "Build completed. Output files:"
         cp ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin .pio/build/esp32dev/
         ls -la .pio/build/esp32dev/ || echo "Build directory not found"
