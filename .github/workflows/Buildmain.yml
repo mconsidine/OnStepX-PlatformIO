@@ -130,8 +130,6 @@ jobs:
         ls -lha /home/runner/work/OnStepX-PlatformIO/
         echo "folder 2:"
         ls -lha /home/runner/work/OnStepX-PlatformIO/OnStepX-PlatformIO/
-        echo "folder 3:"
-        ls -lha /home/runner/work/OnStepX-PlatformIO/OnStepX-PlatformIO/staged
         echo "Building OnStepX for main..."
         pio run -e esp32dev --disable-auto-clean
     
@@ -139,9 +137,11 @@ jobs:
       run: |
         echo "./pio folder"
         ls -lha ./pio
+        mkdir -p staged
         echo "Build completed. Output files:"
         cp ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin .pio/build/esp32dev/
         ls -la .pio/build/esp32dev/ || echo "Build directory not found"
+        cp ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin staged
     
     - name: Upload firmware binary
       uses: actions/upload-artifact@v4
