@@ -126,13 +126,18 @@ jobs:
         ##cat Extended.config.h
         echo "End of current folder structure"
         ####ls ~/.platformio/packages/framework-arduinoespressif32/tools/partitions
-        echo "packages folder:"
-        ls -lha /home/runner
+        echo "folder 1:"
+        ls -lha /home/runner/work/OnStepX-PlatformIO/
+        echo "folder 2:"
+        ls -lha /home/runner/work/OnStepX-PlatformIO/OnStepX-PlatformIO/
+        echo "folder 3:"
+        ls -lha /home/runner/work/OnStepX-PlatformIO/OnStepX-PlatformIO/staged
         echo "Building OnStepX for main..."
         pio run -e esp32dev --disable-auto-clean
     
     - name: List build output files
       run: |
+        echo "./pio folder"
         ls -lha ./pio
         echo "Build completed. Output files:"
         cp ~/.platformio/packages/framework-arduinoespressif32/tools/partitions/boot_app0.bin .pio/build/esp32dev/
