@@ -137,9 +137,9 @@ jobs:
         mv staged/OnStepX.ino staged/OnStepX.cpp
 
         ls -lha
-        cp -a staged src
+        cp -a staged/ src/
         la -lha
-        cd src
+        cd src/
         ls -lha
 
     # Apply config settings to staged Config.h
