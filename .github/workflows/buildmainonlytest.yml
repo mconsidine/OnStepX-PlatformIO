@@ -136,8 +136,8 @@ jobs:
 
         mv staged/*.ino staged/*.cpp
 
-        ls -lha
-        mv staged/ src/
+        ls -lha staged
+        mv staged src
 
     # Apply config settings to staged Config.h
     # ------------------------------------------------------------
