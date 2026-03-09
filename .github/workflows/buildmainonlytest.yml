@@ -302,7 +302,10 @@ jobs:
             exit 1
           fi
         done
-    
+        
+        cd .pio/build/esp32dev_full/
+        ls -lha
+        
         # Generate output filename with build details
         OUTPUT_NAME="${{ github.event.inputs.pin_map }}_${{ github.event.inputs.build_target }}_${{ github.event.inputs.driver_model }}_firmware.bin"
     
@@ -319,7 +322,7 @@ jobs:
           -o "${OUTPUT_NAME}"
 
         echo "Files :"
-        ls -l
+        ls -lha
         echo "----------"
         
         echo "Merged binary created: ${OUTPUT_NAME}"
