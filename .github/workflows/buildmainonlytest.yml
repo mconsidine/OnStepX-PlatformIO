@@ -302,9 +302,8 @@ jobs:
             exit 1
           fi
         done
-        
-        cd .pio/build/esp32dev_full/
-        ls -lha
+
+        ls -lha *.bin
         
         # Generate output filename with build details
         OUTPUT_NAME="${{ github.event.inputs.pin_map }}_${{ github.event.inputs.build_target }}_${{ github.event.inputs.driver_model }}_firmware.bin"
