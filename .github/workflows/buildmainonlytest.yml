@@ -135,10 +135,12 @@ jobs:
         cp onstepx-src/*.ino staged/ 2>/dev/null || true
 
         ls -lha
-        cp staged/*.ino staged/*.cpp
+        mv staged/OnStepX.ino staged/OnStepX.cpp
 
         ls -lha staged
         cp -a staged src
+        cd
+        ls -lha
 
     # Apply config settings to staged Config.h
     # ------------------------------------------------------------
